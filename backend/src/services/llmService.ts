@@ -4,10 +4,12 @@ import axios from 'axios';
 export class LLMService {
   private openaiApiKey: string;
   private claudeApiKey?: string;
+  private imageApiKey?: string;
 
   constructor() {
     this.openaiApiKey = process.env.OPENAI_API_KEY || '';
     this.claudeApiKey = process.env.ANTHROPIC_API_KEY || undefined;
+    this.imageApiKey = process.env.ZAI_API_KEY || '';
   }
 
   /**

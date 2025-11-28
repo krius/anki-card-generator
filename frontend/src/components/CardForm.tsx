@@ -164,175 +164,175 @@ export const CardForm: React.FC<CardFormProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className=\"space-y-6 bg-white rounded-lg shadow-md border border-gray-200 p-6\">
-      <h2 className=\"text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2\">
-        <Sparkles className=\"w-6 h-6 text-primary-600\" />
-        生成Anki卡片
+    <form onSubmit={handleSubmit} className="space-y-6 bg-white rounded-lg shadow-md border border-gray-200 p-6">
+      <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+        <Sparkles className="w-6 h-6 text-primary-600" />
+        Generate Anki Card
       </h2>
 
       {/* 问题输入 */}
       <div>
-        <label className=\"block text-sm font-medium text-gray-700 mb-2\">
-          问题 <span className=\"text-red-500\">*</span>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Question <span className="text-red-500">*</span>
         </label>
         <textarea
           value={formData.question}
           onChange={(e) => handleInputChange('question', e.target.value)}
-          className=\"textarea-field\"
-          placeholder=\"请输入你想要学习的问题...\"
+          className="textarea-field"
+          placeholder="Enter your learning question..."
           rows={3}
           maxLength={1000}
           disabled={isLoading}
         />
-        <div className=\"mt-1 text-sm text-gray-500 text-right\">
+        <div className="mt-1 text-sm text-gray-500 text-right">
           {formData.question.length}/1000
         </div>
       </div>
 
       {/* 图片上传 */}
       <div>
-        <label className=\"block text-sm font-medium text-gray-700 mb-2\">
-          图片（可选）
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Image (Optional)
         </label>
         {imagePreview ? (
-          <div className=\"relative inline-block\">
+          <div className="relative inline-block">
             <img
               src={imagePreview}
-              alt=\"上传的图片\"
-              className=\"max-w-full h-64 object-cover rounded-lg border border-gray-300\"
+              alt="Uploaded image"
+              className="max-w-full h-64 object-cover rounded-lg border border-gray-300"
             />
             <button
-              type=\"button\"
+              type="button"
               onClick={removeImage}
-              className=\"absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-1 rounded-full transition-colors\"
+              className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-1 rounded-full transition-colors"
               disabled={isLoading}
             >
-              <X className=\"w-4 h-4\" />
+              <X className="w-4 h-4" />
             </button>
             {uploadProgress > 0 && uploadProgress < 100 && (
-              <div className=\"absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-center py-1 rounded-b-lg\">
-                上传中... {uploadProgress}%
+              <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-center py-1 rounded-b-lg">
+                Uploading... {uploadProgress}%
               </div>
             )}
           </div>
         ) : (
-          <div className=\"border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary-500 transition-colors\">
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary-500 transition-colors">
             <input
               ref={fileInputRef}
-              type=\"file\"
-              accept=\"image/*\"
+              type="file"
+              accept="image/*"
               onChange={handleImageSelect}
-              className=\"hidden\"
+              className="hidden"
               disabled={isLoading}
             />
             <button
-              type=\"button\"
+              type="button"
               onClick={() => fileInputRef.current?.click()}
-              className=\"btn-secondary\"
+              className="btn-secondary"
               disabled={isLoading}
             >
-              <Upload className=\"w-5 h-5 inline mr-2\" />
-              选择图片
+              <Upload className="w-5 h-5 inline mr-2" />
+              Choose Image
             </button>
-            <p className=\"text-sm text-gray-500 mt-2\">
-              支持 JPEG, PNG, GIF, WebP 格式，最大 10MB
+            <p className="text-sm text-gray-500 mt-2">
+              Supports JPEG, PNG, GIF, WebP formats, max 10MB
             </p>
           </div>
         )}
       </div>
 
       {/* 设置选项 */}
-      <div className=\"grid grid-cols-1 md:grid-cols-2 gap-4\">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className=\"block text-sm font-medium text-gray-700 mb-2\">
-            卡片类型
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Card Type
           </label>
           <select
             value={formData.cardType}
             onChange={(e) => handleInputChange('cardType', e.target.value)}
-            className=\"input-field\"
+            className="input-field"
             disabled={isLoading}
           >
-            <option value=\"basic\">基础问答</option>
-            <option value=\"cloze\">填空题</option>
-            <option value=\"basic-reversed\">双向问答</option>
-            <option value=\"input\">输入题</option>
+            <option value="basic">Basic Q&A</option>
+            <option value="cloze">Fill-in-the-blank</option>
+            <option value="basic-reversed">Basic Reversed</option>
+            <option value="input">Input</option>
           </select>
         </div>
 
         <div>
-          <label className=\"block text-sm font-medium text-gray-700 mb-2\">
-            牌组名称
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Deck Name
           </label>
           <input
-            type=\"text\"
+            type="text"
             value={formData.deckName}
             onChange={(e) => handleInputChange('deckName', e.target.value)}
-            className=\"input-field\"
-            placeholder=\"默认: Default\"
+            className="input-field"
+            placeholder="Default"
             maxLength={100}
             disabled={isLoading}
           />
         </div>
       </div>
 
-      {/* LLM提供商选择 */}
+      {/* LLM Provider选择 */}
       <div>
-        <label className=\"block text-sm font-medium text-gray-700 mb-2\">
-          AI模型
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          AI Model
         </label>
-        <div className=\"flex gap-4\">
-          <label className=\"flex items-center\">
+        <div className="flex gap-4">
+          <label className="flex items-center">
             <input
-              type=\"radio\"
-              value=\"openai\"
+              type="radio"
+              value="openai"
               checked={formData.llmProvider === 'openai'}
               onChange={(e) => handleInputChange('llmProvider', e.target.value)}
-              className=\"mr-2\"
+              className="mr-2"
               disabled={isLoading}
             />
-            <span className=\"text-sm\">OpenAI GPT-4</span>
+            <span className="text-sm">OpenAI GPT-4</span>
           </label>
-          <label className=\"flex items-center\">
+          <label className="flex items-center">
             <input
-              type=\"radio\"
-              value=\"claude\"
+              type="radio"
+              value="claude"
               checked={formData.llmProvider === 'claude'}
               onChange={(e) => handleInputChange('llmProvider', e.target.value)}
-              className=\"mr-2\"
+              className="mr-2"
               disabled={isLoading}
             />
-            <span className=\"text-sm\">Claude</span>
+            <span className="text-sm">Claude</span>
           </label>
         </div>
       </div>
 
       {/* 标签 */}
       <div>
-        <label className=\"block text-sm font-medium text-gray-700 mb-2\">
-          标签（可选）
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Tags (Optional)
         </label>
         <input
-          type=\"text\"
+          type="text"
           onKeyDown={addTag}
-          className=\"input-field\"
-          placeholder=\"输入标签后按回车添加\"
+          className="input-field"
+          placeholder="Enter a tag and press Enter"
           disabled={isLoading}
         />
-        <div className=\"flex flex-wrap gap-2 mt-2\">
+        <div className="flex flex-wrap gap-2 mt-2">
           {formData.tags?.map((tag) => (
             <span
               key={tag}
-              className=\"inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-primary-100 text-primary-800\"
+              className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-primary-100 text-primary-800"
             >
               {tag}
               <button
-                type=\"button\"
+                type="button"
                 onClick={() => removeTag(tag)}
-                className=\"hover:text-primary-900 transition-colors\"
+                className="hover:text-primary-900 transition-colors"
                 disabled={isLoading}
               >
-                <X className=\"w-3 h-3\" />
+                <X className="w-3 h-3" />
               </button>
             </span>
           ))}
@@ -340,9 +340,9 @@ export const CardForm: React.FC<CardFormProps> = ({
       </div>
 
       {/* 提交按钮 */}
-      <div className=\"flex justify-end gap-3\">
+      <div className="flex justify-end gap-3">
         <button
-          type=\"button\"
+          type="button"
           onClick={() => {
             setFormData({
               question: '',
@@ -353,25 +353,25 @@ export const CardForm: React.FC<CardFormProps> = ({
             });
             removeImage();
           }}
-          className=\"btn-secondary\"
+          className="btn-secondary"
           disabled={isLoading}
         >
-          重置
+          Reset
         </button>
         <button
-          type=\"submit\"
-          className=\"btn-primary flex items-center gap-2\"
+          type="submit"
+          className="btn-primary flex items-center gap-2"
           disabled={isLoading || !formData.question.trim()}
         >
           {isLoading ? (
             <>
-              <Loader2 className=\"w-4 h-4 animate-spin\" />
-              {imageFile ? '上传中...' : '生成中...'}
+              <Loader2 className="w-4 h-4 animate-spin" />
+              {imageFile ? 'Uploading...' : 'Generating...'}
             </>
           ) : (
             <>
-              <Sparkles className=\"w-4 h-4\" />
-              生成卡片
+              <Sparkles className="w-4 h-4" />
+              Generate Card
             </>
           )}
         </button>
