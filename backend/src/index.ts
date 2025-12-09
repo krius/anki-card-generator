@@ -4,11 +4,11 @@ import helmet from 'helmet';
 import dotenv from 'dotenv';
 import path from 'path';
 
+// 加载环境变量 - 确保在任何模块导入之前加载
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+
 // 导入路由
 import cardsRouter from './routes/cards';
-
-// 加载环境变量
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;

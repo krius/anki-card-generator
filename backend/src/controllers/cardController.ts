@@ -20,7 +20,6 @@ export class CardController {
     try {
       const request: CardGenerationRequest = req.body;
 
-      // 验证请求数据
       if (!request.question?.trim()) {
         return res.status(400).json({
           success: false,
@@ -28,13 +27,8 @@ export class CardController {
         } as ApiResponse);
       }
 
-      console.log(`Generating card for question: ${request.question.substring(0, 100)}...`);
-
-      // 生成回答
-      const llmResponse = await this.llmService.generateAnswer(
-        request.question,
-        request.llmProvider || 'openai'
-      );
+  
+      const llmResponse = await this.llmService.generateAnswer(request.question);
 
       if (!llmResponse.success || !llmResponse.answer) {
         return res.status(500).json({
@@ -43,7 +37,6 @@ export class CardController {
         } as ApiResponse);
       }
 
-      // 创建卡片
       const card: AnkiCard = {
         id: uuidv4(),
         front: request.question,
@@ -53,7 +46,6 @@ export class CardController {
         cardType: request.cardType || 'basic'
       };
 
-      // 质量检查
       const qualityCheck: QualityCheckResult = await this.llmService.qualityCheck(card);
 
       const response: ApiResponse<AnkiCard & { qualityCheck: QualityCheckResult }> = {
@@ -65,8 +57,7 @@ export class CardController {
         message: `Card generated successfully. Quality score: ${qualityCheck.score}/100`
       };
 
-      console.log(`Card generated with quality score: ${qualityCheck.score}`);
-      return res.json(response);
+        return res.json(response);
     } catch (error) {
       console.error('Error exporting Anki package:', error);
       return next(error);
@@ -102,8 +93,7 @@ export class CardController {
         } as ApiResponse);
       }
 
-      console.log(`Generating ${questions.length} cards...`);
-
+  
       const cards: (AnkiCard & { qualityCheck: QualityCheckResult })[] = [];
       const errors: { index: number; error: string }[] = [];
 
@@ -118,10 +108,7 @@ export class CardController {
           const index = i + batchIndex;
 
           try {
-            const llmResponse = await this.llmService.generateAnswer(
-              questionText,
-              settings?.llmProvider || 'openai'
-            );
+            const llmResponse = await this.llmService.generateAnswer(questionText);
 
             if (!llmResponse.success || !llmResponse.answer) {
               throw new Error(llmResponse.error || 'Failed to generate answer');
@@ -166,8 +153,7 @@ export class CardController {
         }
       });
 
-      console.log(`Generated ${cards.length} cards successfully, ${errors.length} errors`);
-
+    
       const response: ApiResponse<{
         cards: (AnkiCard & { qualityCheck: QualityCheckResult })[];
         errors: { index: number; error: string }[];
@@ -209,8 +195,7 @@ export class CardController {
         } as ApiResponse);
       }
 
-      console.log(`Exporting ${cards.length} cards to Anki package: ${deckName}`);
-
+  
       // 使用AnkiService导出
       const apkgBuffer = await this.ankiService.exportAnkiPackage({
         cards,
@@ -226,8 +211,7 @@ export class CardController {
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.setHeader('Content-Length', apkgBuffer.length);
 
-      console.log(`Successfully generated Anki package: ${filename} (${apkgBuffer.length} bytes)`);
-
+  
       return res.send(apkgBuffer);
     } catch (error) {
       console.error('Error exporting Anki package:', error);
@@ -254,8 +238,7 @@ export class CardController {
         } as ApiResponse);
       }
 
-      console.log(`Performing quality check for card: ${card.front.substring(0, 50)}...`);
-
+    
       const qualityCheck = await this.llmService.qualityCheck(card);
 
       const response: ApiResponse<QualityCheckResult> = {
@@ -289,8 +272,7 @@ export class CardController {
         } as ApiResponse);
       }
 
-      console.log(`Improving card based on feedback: ${issues.length} issues`);
-
+      
       // 构建改进提示词
       const improvementPrompt = `
 请根据以下反馈改进这个Anki学习卡片：
@@ -317,10 +299,7 @@ ${suggestions.map((suggestion, i) => `${i + 1}. ${suggestion}`).join('\n')}
 改进说明：[简要说明改进点]
 `;
 
-      const llmResponse = await this.llmService.generateAnswer(
-        improvementPrompt,
-        'openai'
-      );
+      const llmResponse = await this.llmService.generateAnswer(improvementPrompt);
 
       if (!llmResponse.success || !llmResponse.answer) {
         return res.status(500).json({
@@ -348,8 +327,7 @@ ${suggestions.map((suggestion, i) => `${i + 1}. ${suggestion}`).join('\n')}
         message: `Card improved successfully. New quality score: ${qualityCheck.score}/100`
       };
 
-      console.log(`Card improved with quality score: ${qualityCheck.score}`);
-
+    
       return res.json(response);
     } catch (error) {
       console.error('Error improving card:', error);
@@ -365,7 +343,6 @@ ${suggestions.map((suggestion, i) => `${i + 1}. ${suggestion}`).join('\n')}
       const lines = response.split('\n');
       let improvedFront = originalCard.front;
       let improvedBack = originalCard.back;
-      let improvementExplanation = '';
 
       lines.forEach(line => {
         if (line.includes('改进的正面：') || line.includes('Improved Front:')) {
@@ -374,14 +351,11 @@ ${suggestions.map((suggestion, i) => `${i + 1}. ${suggestion}`).join('\n')}
         if (line.includes('改进的背面：') || line.includes('Improved Back:')) {
           improvedBack = line.replace(/^(改进的背面：|Improved Back:)/, '').trim();
         }
-        if (line.includes('改进说明：') || line.includes('Improvement Notes:')) {
-          improvementExplanation = line.replace(/^(改进说明：|Improvement Notes:)/, '').trim();
-        }
-      });
+        });
 
       return {
         ...originalCard,
-        id: uuidv4(), // 生成新ID
+        id: uuidv4(),
         front: improvedFront,
         back: improvedBack
       };
@@ -389,7 +363,7 @@ ${suggestions.map((suggestion, i) => `${i + 1}. ${suggestion}`).join('\n')}
       console.error('Error parsing improved card response:', error);
       return {
         ...originalCard,
-        id: uuidv4() // 生成新ID
+        id: uuidv4()
       };
     }
   }
