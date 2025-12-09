@@ -160,8 +160,9 @@ export const withRetry = async <T>(
       lastError = error;
 
       if (i < maxRetries - 1) {
-        console.warn(`Operation failed, retrying in ${delay}ms... (${i + 1}/${maxRetries})`);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        const currentDelay = delay;
+        console.warn(`Operation failed, retrying in ${currentDelay}ms... (${i + 1}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, currentDelay));
         delay *= 2; // 指数退避
       }
     }

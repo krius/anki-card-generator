@@ -198,7 +198,7 @@ export const CardForm: React.FC<CardFormProps> = ({
           <div className="relative inline-block">
             <img
               src={imagePreview}
-              alt="Uploaded image"
+              alt="Uploaded"
               className="max-w-full h-64 object-cover rounded-lg border border-gray-300"
             />
             <button
