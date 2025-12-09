@@ -4,6 +4,13 @@
 
 本文档为Anki卡片生成器项目的开发指南，包含常见问题解决方案、开发规则和最佳实践。
 
+## 📚 项目文档索引
+
+- **[CLAUDE.md](./CLAUDE.md)** (当前文件) - 开发规范和最佳实践
+- **[API.md](./API.md)** - 专业API接口文档 (开发者使用)
+- **[FRONTEND_BACKEND_GUIDE.md](./FRONTEND_BACKEND_GUIDE.md)** - 前后端沟通指南 (初学者友好)
+- **[EXECUTION_PLAN.md](./EXECUTION_PLAN.md)** - 项目重构执行计划
+
 ## 🚨 常见问题与解决方案
 
 ### 1. 依赖和包管理问题
