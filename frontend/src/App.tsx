@@ -110,7 +110,7 @@ function App() {
 
     // 分批处理，每批最多50张卡片
     const batchSize = 50;
-    const batches = [];
+    const batches: AnkiCard[][] = [];
     for (let i = 0; i < cards.length; i += batchSize) {
       batches.push(cards.slice(i, i + batchSize));
     }
