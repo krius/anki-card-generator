@@ -122,8 +122,13 @@ export const CardList: React.FC<CardListProps> = ({
     try {
       setImprovingCards(prev => new Set(prev).add(card.id));
 
+          const qualityCheck = card.qualityCheck;
+      if (!qualityCheck) {
+        throw new Error('质量检查结果不可用');
+      }
+
       const response = await withRetry(() =>
-        apiService.improveCard(card, card.qualityCheck.issues, card.qualityCheck.suggestions)
+        apiService.improveCard(card, qualityCheck.issues, qualityCheck.suggestions)
       );
 
       if (response.success && response.data) {
@@ -145,7 +150,7 @@ export const CardList: React.FC<CardListProps> = ({
   const addTagToEditingCard = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && newTag.trim()) {
       e.preventDefault();
-      if (!editingCard.tags.includes(newTag.trim())) {
+      if (editingCard && !editingCard.tags.includes(newTag.trim())) {
         setEditingCard(prev => prev ? {
           ...prev,
           tags: [...prev.tags, newTag.trim()]
