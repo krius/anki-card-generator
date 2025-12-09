@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from 'axios';
-import { ApiResponse, AnkiCard, CardGenerationRequest, QualityCheckResult, FileUploadResponse, UserSettings } from '../types';
+import { ApiResponse, AnkiCard, CardGenerationRequest, QualityCheckResult, UserSettings } from '../types';
 
 // API基础配置
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
@@ -110,26 +110,6 @@ export const apiService = {
     const response = await api.post('/api/cards/export', { cards, deckName }, {
       responseType: 'blob',
     });
-    return response.data;
-  },
-
-  // 上传图片
-  async uploadImage(file: File, onUploadProgress?: (progress: number) => void): Promise<ApiResponse<FileUploadResponse>> {
-    const formData = new FormData();
-    formData.append('image', file);
-
-    const response = await api.post('/api/cards/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-      onUploadProgress: (progressEvent) => {
-        if (onUploadProgress && progressEvent.total) {
-          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-          onUploadProgress(progress);
-        }
-      },
-    });
-
     return response.data;
   },
 };

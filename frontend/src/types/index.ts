@@ -30,20 +30,10 @@ export interface QualityCheckResult {
 // 卡片生成请求
 export interface CardGenerationRequest {
   question: string;
-  imageUrl?: string;
   cardType?: AnkiCard['cardType'];
   tags?: string[];
   deckName?: string;
-  llmProvider?: 'openai' | 'claude';
-}
-
-// 文件上传响应
-export interface FileUploadResponse {
-  filename: string;
-  originalName: string;
-  size: number;
-  mimetype: string;
-  url: string;
+  llmProvider?: 'openai' | 'claude' | 'zhipu';
 }
 
 // 用户设置
@@ -51,7 +41,7 @@ export interface UserSettings {
   defaultDeckName: string;
   defaultCardType: AnkiCard['cardType'];
   defaultTags: string[];
-  llmProvider: 'openai' | 'claude';
+  llmProvider: 'openai' | 'claude' | 'zhipu';
   autoExport: boolean;
   qualityThreshold: number;
 }
@@ -63,7 +53,6 @@ export interface AppState {
   isLoading: boolean;
   error: string | null;
   settings: UserSettings;
-  uploadProgress: number;
   generationProgress: {
     current: number;
     total: number;

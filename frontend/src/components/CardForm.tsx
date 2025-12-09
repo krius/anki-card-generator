@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { Upload, X, Loader2, Sparkles } from 'lucide-react';
+import React, { useState } from 'react';
+import { Loader2, Sparkles } from 'lucide-react';
 import { CardGenerationRequest, AnkiCard, QualityCheckResult } from '../types';
 import { apiService, handleApiError, withRetry } from '../services/api';
 
@@ -24,70 +24,11 @@ export const CardForm: React.FC<CardFormProps> = ({
     llmProvider: 'openai',
   });
 
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string>('');
-  const [uploadProgress, setUploadProgress] = useState<number>(0);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
   const handleInputChange = (field: keyof CardGenerationRequest, value: string | string[]) => {
     setFormData(prev => ({
       ...prev,
       [field]: value,
     }));
-  };
-
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // 验证文件类型
-      if (!file.type.startsWith('image/')) {
-        onError('请选择图片文件');
-        return;
-      }
-
-      // 验证文件大小 (10MB)
-      if (file.size > 10 * 1024 * 1024) {
-        onError('图片文件不能超过 10MB');
-        return;
-      }
-
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImagePreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const removeImage = () => {
-    setImageFile(null);
-    setImagePreview('');
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const handleImageUpload = async (): Promise<string | undefined> => {
-    if (!imageFile) return undefined;
-
-    try {
-      setIsLoading(true);
-      setUploadProgress(0);
-
-      const response = await withRetry(
-        () => apiService.uploadImage(imageFile, setUploadProgress)
-      );
-
-      if (response.success && response.data) {
-        return response.data.url;
-      } else {
-        throw new Error(response.error || '图片上传失败');
-      }
-    } catch (error) {
-      onError(handleApiError(error));
-      return undefined;
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -101,19 +42,9 @@ export const CardForm: React.FC<CardFormProps> = ({
     try {
       setIsLoading(true);
 
-      // 如果有图片，先上传
-      let imageUrl = formData.imageUrl;
-      if (imageFile) {
-        imageUrl = await handleImageUpload();
-        if (!imageUrl) {
-          return; // 上传失败，错误已在handleImageUpload中处理
-        }
-      }
-
       const requestData: CardGenerationRequest = {
         ...formData,
         question: formData.question.trim(),
-        imageUrl,
         tags: formData.tags?.filter(tag => tag.trim()) || [],
         deckName: formData.deckName?.trim() || 'Default',
       };
@@ -130,7 +61,6 @@ export const CardForm: React.FC<CardFormProps> = ({
           tags: [],
           llmProvider: 'openai',
         });
-        removeImage();
       } else {
         throw new Error(response.error || '卡片生成失败');
       }
@@ -138,7 +68,6 @@ export const CardForm: React.FC<CardFormProps> = ({
       onError(handleApiError(error));
     } finally {
       setIsLoading(false);
-      setUploadProgress(0);
     }
   };
 
@@ -187,58 +116,6 @@ export const CardForm: React.FC<CardFormProps> = ({
         <div className="mt-1 text-sm text-gray-500 text-right">
           {formData.question.length}/1000
         </div>
-      </div>
-
-      {/* 图片上传 */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Image (Optional)
-        </label>
-        {imagePreview ? (
-          <div className="relative inline-block">
-            <img
-              src={imagePreview}
-              alt="Uploaded"
-              className="max-w-full h-64 object-cover rounded-lg border border-gray-300"
-            />
-            <button
-              type="button"
-              onClick={removeImage}
-              className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-1 rounded-full transition-colors"
-              disabled={isLoading}
-            >
-              <X className="w-4 h-4" />
-            </button>
-            {uploadProgress > 0 && uploadProgress < 100 && (
-              <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-center py-1 rounded-b-lg">
-                Uploading... {uploadProgress}%
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary-500 transition-colors">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleImageSelect}
-              className="hidden"
-              disabled={isLoading}
-            />
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="btn-secondary"
-              disabled={isLoading}
-            >
-              <Upload className="w-5 h-5 inline mr-2" />
-              Choose Image
-            </button>
-            <p className="text-sm text-gray-500 mt-2">
-              Supports JPEG, PNG, GIF, WebP formats, max 10MB
-            </p>
-          </div>
-        )}
       </div>
 
       {/* 设置选项 */}
@@ -304,6 +181,17 @@ export const CardForm: React.FC<CardFormProps> = ({
             />
             <span className="text-sm">Claude</span>
           </label>
+          <label className="flex items-center">
+            <input
+              type="radio"
+              value="zhipu"
+              checked={formData.llmProvider === 'zhipu'}
+              onChange={(e) => handleInputChange('llmProvider', e.target.value)}
+              className="mr-2"
+              disabled={isLoading}
+            />
+            <span className="text-sm">智谱AI GLM-4</span>
+          </label>
         </div>
       </div>
 
@@ -332,7 +220,9 @@ export const CardForm: React.FC<CardFormProps> = ({
                 className="hover:text-primary-900 transition-colors"
                 disabled={isLoading}
               >
-                <X className="w-3 h-3" />
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </span>
           ))}
@@ -351,7 +241,6 @@ export const CardForm: React.FC<CardFormProps> = ({
               tags: [],
               llmProvider: 'openai',
             });
-            removeImage();
           }}
           className="btn-secondary"
           disabled={isLoading}
@@ -366,7 +255,7 @@ export const CardForm: React.FC<CardFormProps> = ({
           {isLoading ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              {imageFile ? 'Uploading...' : 'Generating...'}
+              Generating...
             </>
           ) : (
             <>
