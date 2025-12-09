@@ -11,10 +11,10 @@ export interface AnkiCard {
 // 卡片生成请求
 export interface CardGenerationRequest {
   question: string;
-  imageUrl?: string;
   cardType?: AnkiCard['cardType'];
   tags?: string[];
   deckName?: string;
+  llmProvider?: 'openai' | 'claude' | 'zhipu';
 }
 
 // 质检结果
@@ -57,14 +57,6 @@ export interface ApiResponse<T = any> {
   message?: string;
 }
 
-// 文件上传信息
-export interface FileUpload {
-  filename: string;
-  originalName: string;
-  size: number;
-  mimetype: string;
-  path: string;
-}
 
 // 导出请求
 export interface ExportRequest {
@@ -79,6 +71,6 @@ export interface UserSettings {
   defaultCardType: AnkiCard['cardType'];
   autoExport: boolean;
   qualityThreshold: number;
-  llmProvider: 'openai' | 'claude';
+  llmProvider: 'openai' | 'claude' | 'zhipu';
   apiKey: string;
 }

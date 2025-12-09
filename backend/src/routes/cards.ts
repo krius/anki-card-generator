@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import { CardController } from '../controllers/cardController';
-import { uploadMiddleware } from '../middleware/upload';
 import { validateCardRequest } from '../middleware/validation';
 import rateLimit from 'express-rate-limit';
 
@@ -19,15 +18,6 @@ const generalLimiter = rateLimit({
   legacyHeaders: false
 });
 
-// 文件上传限流（更严格）
-const uploadLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15分钟
-  max: 20, // 最多20个上传请求
-  message: {
-    success: false,
-    error: 'Too many upload requests from this IP, please try again later'
-  }
-});
 
 // 应用限流
 router.use(generalLimiter);
@@ -44,7 +34,7 @@ router.post('/generate', validateCardRequest, cardController.generateCard);
  * @desc 批量生成Anki卡片
  * @access Public
  */
-router.post('/generate/batch', uploadLimiter, cardController.generateCards);
+router.post('/generate/batch', cardController.generateCards);
 
 /**
  * @route POST /api/cards/export
@@ -67,41 +57,6 @@ router.post('/quality-check', cardController.checkQuality);
  */
 router.post('/improve', cardController.improveCard);
 
-/**
- * @route POST /api/cards/upload
- * @desc 上传图片文件用于OCR
- * @access Public
- */
-router.post('/upload', uploadLimiter, uploadMiddleware.single('image'), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        error: 'No image file provided'
-      });
-    }
-
-    const fileUrl = `/uploads/${req.file.filename}`;
-
-    res.json({
-      success: true,
-      data: {
-        filename: req.file.filename,
-        originalName: req.file.originalname,
-        size: req.file.size,
-        mimetype: req.file.mimetype,
-        url: fileUrl
-      },
-      message: 'Image uploaded successfully'
-    });
-  } catch (error) {
-    console.error('Error uploading image:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to upload image'
-    });
-  }
-});
 
 /**
  * @route GET /api/cards/health

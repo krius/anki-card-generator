@@ -121,7 +121,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   }
 
   // 通用错误响应
-  res.status(err.status || 500).json({
+  return res.status(err.status || 500).json({
     success: false,
     error: err.message || 'Internal Server Error',
     ...(process.env.NODE_ENV === 'development' && {
@@ -163,4 +163,5 @@ process.on('SIGTERM', () => {
   });
 });
 
+export { app };
 export default app;

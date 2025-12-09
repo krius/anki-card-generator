@@ -24,13 +24,7 @@ export const validateCardRequest = (req: Request, res: Response, next: NextFunct
       });
     }
 
-    // 验证可选字段
-    if (data.imageUrl && typeof data.imageUrl !== 'string') {
-      return res.status(400).json({
-        success: false,
-        error: 'Image URL must be a string'
-      });
-    }
+    // 验证可选字段 - 图片功能已移除
 
     if (data.cardType && !['basic', 'cloze', 'basic-reversed', 'input'].includes(data.cardType)) {
       return res.status(400).json({
@@ -81,16 +75,16 @@ export const validateCardRequest = (req: Request, res: Response, next: NextFunct
     // 清理和标准化数据
     req.body = {
       question: data.question.trim(),
-      imageUrl: data.imageUrl?.trim(),
       cardType: data.cardType || 'basic',
       tags: data.tags?.map(tag => tag.trim()).filter(tag => tag.length > 0) || [],
-      deckName: data.deckName?.trim() || 'Default'
+      deckName: data.deckName?.trim() || 'Default',
+      llmProvider: data.llmProvider || 'openai'
     };
 
-    next();
+    return next();
   } catch (error) {
     console.error('Validation error:', error);
-    res.status(400).json({
+    return res.status(400).json({
       success: false,
       error: 'Invalid request format'
     });
@@ -203,7 +197,7 @@ export const validateBatchRequest = (req: Request, res: Response, next: NextFunc
       }
     }
 
-    next();
+    return next();
   } catch (error) {
     console.error('Batch validation error:', error);
     res.status(400).json({
@@ -291,7 +285,7 @@ export const validateExportRequest = (req: Request, res: Response, next: NextFun
       });
     }
 
-    next();
+    return next();
   } catch (error) {
     console.error('Export validation error:', error);
     res.status(400).json({
@@ -329,7 +323,7 @@ export const validateQualityCheckRequest = (req: Request, res: Response, next: N
       });
     }
 
-    next();
+    return next();
   } catch (error) {
     console.error('Quality check validation error:', error);
     res.status(400).json({

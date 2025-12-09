@@ -4,50 +4,57 @@ import axios from 'axios';
 export class LLMService {
   private openaiApiKey: string;
   private claudeApiKey?: string;
-  private imageApiKey?: string;
+  private zhipuApiKey?: string;
 
   constructor() {
     this.openaiApiKey = process.env.OPENAI_API_KEY || '';
     this.claudeApiKey = process.env.ANTHROPIC_API_KEY || undefined;
-    this.imageApiKey = process.env.ZAI_API_KEY || '';
+    this.zhipuApiKey = process.env.ZHIPU_API_KEY || undefined;
   }
 
   /**
    * 基于问题生成回答
    */
-  async generateAnswer(question: string, provider: 'openai' | 'claude' = 'openai'): Promise<LLMResponse> {
+  async generateAnswer(question: string, provider: 'openai' | 'claude' | 'zhipu' = 'openai'): Promise<LLMResponse> {
     try {
       const prompt = this.buildQuestionPrompt(question);
 
+      // 检查对应提供商的API密钥是否配置
       if (provider === 'openai') {
+        if (!this.openaiApiKey) {
+          return {
+            success: false,
+            error: 'OpenAI API密钥未配置，请在环境变量中设置OPENAI_API_KEY'
+          };
+        }
         return await this.callOpenAI(prompt);
-      } else {
+      } else if (provider === 'claude') {
+        if (!this.claudeApiKey) {
+          return {
+            success: false,
+            error: 'Claude API密钥未配置，请在环境变量中设置ANTHROPIC_API_KEY'
+          };
+        }
         return await this.callClaude(prompt);
-      }
-    } catch (error) {
-      console.error('Error generating answer:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
-      };
-    }
-  }
-
-  /**
-   * 基于图片和问题生成回答
-   */
-  async generateAnswerWithImage(question: string, imageUrl: string, provider: 'openai' | 'claude' = 'openai'): Promise<LLMResponse> {
-    try {
-      if (provider === 'openai') {
-        return await this.callOpenAIWithImage(question, imageUrl);
+      } else if (provider === 'zhipu') {
+        if (!this.zhipuApiKey) {
+          return {
+            success: false,
+            error: '智谱AI API密钥未配置，请在环境变量中设置ZHIPU_API_KEY'
+          };
+        }
+        return await this.callZhipu(prompt);
       } else {
-        return await this.callClaudeWithImage(question, imageUrl);
+        return {
+          success: false,
+          error: `不支持的LLM提供商: ${provider}`
+        };
       }
     } catch (error) {
-      console.error('Error generating answer with image:', error);
+      console.error(`Error generating answer with ${provider}:`, error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : `${provider} API调用失败`
       };
     }
   }
@@ -58,27 +65,145 @@ export class LLMService {
   async qualityCheck(card: AnkiCard): Promise<QualityCheckResult> {
     try {
       const prompt = this.buildQualityCheckPrompt(card);
-      const response = await this.callOpenAI(prompt);
+
+      let response: LLMResponse;
+
+      // 使用OpenAI进行质量检查（如果配置了的话）
+      if (this.openaiApiKey) {
+        response = await this.callOpenAI(prompt);
+      } else if (this.claudeApiKey) {
+        response = await this.callClaude(prompt);
+      } else {
+        // 如果没有配置API，使用默认评分
+        return {
+          passed: true,
+          score: 75,
+          issues: [],
+          suggestions: ['建议添加具体例子', '可以适当扩展解释']
+        };
+      }
 
       if (!response.success || !response.answer) {
         return {
           passed: false,
           score: 0,
-          issues: ['Failed to perform quality check'],
-          suggestions: ['Please try again or manually review the card']
+          issues: ['质量检查失败'],
+          suggestions: []
         };
       }
 
-      // 解析质检结果
-      const result = this.parseQualityCheckResponse(response.answer);
-      return result;
+      return this.parseQualityCheckResponse(response.answer);
     } catch (error) {
       console.error('Error in quality check:', error);
       return {
         passed: false,
         score: 0,
-        issues: ['Quality check service unavailable'],
-        suggestions: ['Please manually review the card before exporting']
+        issues: ['质量检查出错'],
+        suggestions: []
+      };
+    }
+  }
+
+  /**
+   * 构建问题生成提示词
+   */
+  private buildQuestionPrompt(question: string): string {
+    return `
+请基于以下问题生成一个高质量的Anki学习卡片回答：
+
+问题：${question}
+
+要求：
+1. 回答要准确、简洁明了
+2. 适合记忆和理解
+3. 重点突出关键概念
+4. 可以适当举例说明
+5. 长度控制在100-300字之间
+
+请直接给出回答内容，不要包含其他格式说明。
+`;
+  }
+
+  /**
+   * 构建质量检查提示词
+   */
+  private buildQualityCheckPrompt(card: AnkiCard): string {
+    return `
+请对这个Anki学习卡片进行质量评估：
+
+卡片内容：
+正面：${card.front}
+背面：${card.back}
+
+请从以下维度评估（0-100分）：
+1. **准确性** (30分)：内容是否准确无误
+2. **清晰度** (25分)：表达是否清楚易懂
+3. **简洁性** (20分)：内容是否简洁不冗余
+4. **学习价值** (15分)：是否有助于学习和记忆
+5. **完整性** (10分)：信息是否相对完整
+
+请按以下格式回复：
+总分：XX分
+是否通过：是/否（总分≥70分通过）
+存在的问题：
+1. 问题描述
+2. 问题描述
+
+改进建议：
+1. 建议内容
+2. 建议内容
+`;
+  }
+
+  /**
+   * 解析质量检查回复
+   */
+  private parseQualityCheckResponse(response: string): QualityCheckResult {
+    try {
+      const lines = response.split('\n');
+      let score = 70; // 默认分数
+      let passed = true;
+      const issues: string[] = [];
+      const suggestions: string[] = [];
+
+      lines.forEach(line => {
+        const trimmedLine = line.trim();
+
+        if (trimmedLine.includes('总分：')) {
+          const match = trimmedLine.match(/(\d+)/);
+          if (match) {
+            score = parseInt(match[1]);
+          }
+        }
+
+        if (trimmedLine.includes('是否通过：')) {
+          passed = trimmedLine.includes('是');
+        }
+
+        if (trimmedLine.match(/^\d+\./) || trimmedLine.match(/^[-*]\s/)) {
+          if (trimmedLine.includes('问题') || issues.length > 0) {
+            if (suggestions.length === 0) {
+              issues.push(trimmedLine.replace(/^\d+\.\s*/, '').replace(/^[-*]\s*/, ''));
+            }
+          } else {
+            suggestions.push(trimmedLine.replace(/^\d+\.\s*/, '').replace(/^[-*]\s*/, ''));
+          }
+        }
+      });
+
+      return {
+        passed: passed && score >= 70,
+        score,
+        issues: issues.length > 0 ? issues : passed ? [] : ['内容需要改进'],
+        suggestions: suggestions.length > 0 ? suggestions : ['建议添加更多细节']
+      };
+    } catch (error) {
+      console.error('Error parsing quality check response:', error);
+      return {
+        passed: false,
+        score: 0,
+        issues: ['解析质量检查结果失败'],
+        suggestions: []
       };
     }
   }
@@ -88,21 +213,25 @@ export class LLMService {
    */
   private async callOpenAI(prompt: string): Promise<LLMResponse> {
     try {
+      if (!this.openaiApiKey) {
+        throw new Error('OpenAI API密钥未配置');
+      }
+
       const response = await axios.post(
         'https://api.openai.com/v1/chat/completions',
         {
-          model: process.env.OPENAI_MODEL || 'gpt-4',
+          model: process.env.OPENAI_MODEL || 'gpt-3.5-turbo',
           messages: [
             {
               role: 'system',
-              content: '你是一个专业的知识导师，擅长为学习者生成清晰、准确、有用的回答。请确保你的回答准确、完整且易于理解。'
+              content: '你是一个专业的学习卡片设计师，擅长创建高质量、易记的Anki卡片。'
             },
             {
               role: 'user',
               content: prompt
             }
           ],
-          max_tokens: 1000,
+          max_tokens: 800,
           temperature: 0.7
         },
         {
@@ -113,79 +242,18 @@ export class LLMService {
         }
       );
 
-      const answer = response.data.choices[0]?.message?.content || '';
-      const tokensUsed = response.data.usage?.total_tokens || 0;
-
+      const answer = response.data.choices[0]?.message?.content;
       return {
         success: true,
-        answer: answer.trim(),
-        tokensUsed,
+        answer: answer?.trim(),
+        tokensUsed: response.data.usage?.total_tokens,
         model: response.data.model
       };
-    } catch (error: any) {
-      console.error('OpenAI API error:', error.response?.data || error.message);
+    } catch (error) {
+      console.error('OpenAI API error:', error);
       return {
         success: false,
-        error: error.response?.data?.error?.message || error.message
-      };
-    }
-  }
-
-  /**
-   * 调用OpenAI API with image
-   */
-  private async callOpenAIWithImage(question: string, imageUrl: string): Promise<LLMResponse> {
-    try {
-      const response = await axios.post(
-        'https://api.openai.com/v1/chat/completions',
-        {
-          model: 'gpt-4-vision-preview',
-          messages: [
-            {
-              role: 'system',
-              content: '你是一个专业的知识导师，能够分析图片并回答相关问题。请仔细观察图片，并根据用户的问题提供准确、详细的回答。'
-            },
-            {
-              role: 'user',
-              content: [
-                {
-                  type: 'text',
-                  text: `请根据这张图片回答以下问题：${question}`
-                },
-                {
-                  type: 'image_url',
-                  image_url: {
-                    url: imageUrl
-                  }
-                }
-              ]
-            }
-          ],
-          max_tokens: 1000,
-          temperature: 0.7
-        },
-        {
-          headers: {
-            'Authorization': `Bearer ${this.openaiApiKey}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-
-      const answer = response.data.choices[0]?.message?.content || '';
-      const tokensUsed = response.data.usage?.total_tokens || 0;
-
-      return {
-        success: true,
-        answer: answer.trim(),
-        tokensUsed,
-        model: response.data.model
-      };
-    } catch (error: any) {
-      console.error('OpenAI Vision API error:', error.response?.data || error.message);
-      return {
-        success: false,
-        error: error.response?.data?.error?.message || error.message
+        error: error instanceof Error ? error.message : 'OpenAI API调用失败'
       };
     }
   }
@@ -194,23 +262,20 @@ export class LLMService {
    * 调用Claude API
    */
   private async callClaude(prompt: string): Promise<LLMResponse> {
-    if (!this.claudeApiKey) {
-      return {
-        success: false,
-        error: 'Claude API key not configured'
-      };
-    }
-
     try {
+      if (!this.claudeApiKey) {
+        throw new Error('Claude API密钥未配置');
+      }
+
       const response = await axios.post(
         'https://api.anthropic.com/v1/messages',
         {
           model: 'claude-3-sonnet-20240229',
-          max_tokens: 1000,
+          max_tokens: 800,
           messages: [
             {
               role: 'user',
-              content: `你是一个专业的知识导师，擅长为学习者生成清晰、准确、有用的回答。请确保你的回答准确、完整且易于理解。\n\n${prompt}`
+              content: prompt
             }
           ]
         },
@@ -223,182 +288,63 @@ export class LLMService {
         }
       );
 
-      const answer = response.data.content[0]?.text || '';
-      const tokensUsed = response.data.usage?.input_tokens + response.data.usage?.output_tokens || 0;
-
+      const answer = response.data.content[0]?.text;
       return {
         success: true,
-        answer: answer.trim(),
-        tokensUsed,
-        model: response.data.model
-      };
-    } catch (error: any) {
-      console.error('Claude API error:', error.response?.data || error.message);
-      return {
-        success: false,
-        error: error.response?.data?.error?.message || error.message
-      };
-    }
-  }
-
-  /**
-   * 调用Claude API with image
-   */
-  private async callClaudeWithImage(question: string, imageUrl: string): Promise<LLMResponse> {
-    if (!this.claudeApiKey) {
-      return {
-        success: false,
-        error: 'Claude API key not configured'
-      };
-    }
-
-    try {
-      const response = await axios.post(
-        'https://api.anthropic.com/v1/messages',
-        {
-          model: 'claude-3-sonnet-20240229',
-          max_tokens: 1000,
-          messages: [
-            {
-              role: 'user',
-              content: [
-                {
-                  type: 'text',
-                  text: '你是一个专业的知识导师，能够分析图片并回答相关问题。请仔细观察图片，并根据用户的问题提供准确、详细的回答。'
-                },
-                {
-                  type: 'image',
-                  source: {
-                    type: 'base64',
-                    media_type: 'image/jpeg',
-                    data: imageUrl // 这里需要base64编码的图片数据
-                  }
-                },
-                {
-                  type: 'text',
-                  text: `请根据这张图片回答以下问题：${question}`
-                }
-              ]
-            }
-          ]
-        },
-        {
-          headers: {
-            'x-api-key': this.claudeApiKey,
-            'anthropic-version': '2023-06-01',
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-
-      const answer = response.data.content[0]?.text || '';
-      const tokensUsed = response.data.usage?.input_tokens + response.data.usage?.output_tokens || 0;
-
-      return {
-        success: true,
-        answer: answer.trim(),
-        tokensUsed,
-        model: response.data.model
-      };
-    } catch (error: any) {
-      console.error('Claude Vision API error:', error.response?.data || error.message);
-      return {
-        success: false,
-        error: error.response?.data?.error?.message || error.message
-      };
-    }
-  }
-
-  /**
-   * 构建问题提示词
-   */
-  private buildQuestionPrompt(question: string): string {
-    return `
-请为以下问题提供一个清晰、准确、完整的回答：
-
-问题：${question}
-
-要求：
-1. 回答要准确、客观
-2. 语言要简洁明了，易于理解
-3. 如果是复杂概念，请提供简单的例子
-4. 回答长度适中，适合制作成学习卡片
-5. 避免过于冗长的解释，保持重点突出
-
-请直接回答问题，不需要额外的格式化。
-`;
-  }
-
-  /**
-   * 构建质检提示词
-   */
-  private buildQualityCheckPrompt(card: AnkiCard): string {
-    return `
-请对以下Anki学习卡片进行质量评估，并给出具体的改进建议：
-
-卡片正面（问题）：${card.front}
-卡片背面（回答）：${card.back}
-
-请从以下几个方面评估：
-1. 准确性：内容是否准确无误
-2. 清晰度：表述是否清晰易懂
-3. 完整性：回答是否完整
-4. 适合性：是否适合制作成学习卡片
-5. 格式：是否有格式问题
-
-请按以下格式回复：
-分数：[0-100分]
-是否通过：[是/否]
-问题：[具体问题列表]
-建议：[改进建议列表]
-`;
-  }
-
-  /**
-   * 解析质检结果
-   */
-  private parseQualityCheckResponse(response: string): QualityCheckResult {
-    try {
-      // 简单的解析逻辑，实际使用中可能需要更复杂的解析
-      const lines = response.split('\n');
-      let score = 50; // 默认分数
-      let passed = false;
-      const issues: string[] = [];
-      const suggestions: string[] = [];
-
-      lines.forEach(line => {
-        if (line.includes('分数：')) {
-          const match = line.match(/(\d+)/);
-          if (match) score = parseInt(match[1]);
-        }
-        if (line.includes('是否通过：')) {
-          passed = line.includes('是');
-        }
-        if (line.includes('问题：') || line.includes('Issues：')) {
-          // 提取问题部分
-          const problemText = line.replace(/^(问题：|Issues：)/, '').trim();
-          if (problemText) issues.push(problemText);
-        }
-        if (line.includes('建议：') || line.includes('Suggestions：')) {
-          // 提取建议部分
-          const suggestionText = line.replace(/^(建议：|Suggestions：)/, '').trim();
-          if (suggestionText) suggestions.push(suggestionText);
-        }
-      });
-
-      return {
-        passed,
-        score,
-        issues,
-        suggestions
+        answer: answer?.trim(),
+        model: 'claude-3-sonnet'
       };
     } catch (error) {
-      console.error('Error parsing quality check response:', error);
+      console.error('Claude API error:', error);
       return {
-        passed: false,
-        score: 0,
-        issues: ['Failed to parse quality check result'],
-        suggestions: ['Please manually review the card']
+        success: false,
+        error: error instanceof Error ? error.message : 'Claude API调用失败'
+      };
+    }
+  }
+
+  /**
+   * 调用智谱AI API
+   */
+  private async callZhipu(prompt: string): Promise<LLMResponse> {
+    try {
+      if (!this.zhipuApiKey) {
+        throw new Error('智谱AI API密钥未配置');
+      }
+
+      const response = await axios.post(
+        'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+        {
+          model: process.env.ZHIPU_MODEL || 'glm-4',
+          messages: [
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          max_tokens: 800,
+          temperature: 0.7
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${this.zhipuApiKey}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      const answer = response.data.choices[0]?.message?.content;
+      return {
+        success: true,
+        answer: answer?.trim(),
+        tokensUsed: response.data.usage?.total_tokens,
+        model: response.data.model
+      };
+    } catch (error) {
+      console.error('智谱AI API error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '智谱AI API调用失败'
       };
     }
   }

@@ -31,10 +31,9 @@ export class CardController {
       console.log(`Generating card for question: ${request.question.substring(0, 100)}...`);
 
       // 生成回答
-      const llmResponse = await this.llmService.generateAnswerWithImage(
+      const llmResponse = await this.llmService.generateAnswer(
         request.question,
-        request.imageUrl || '',
-        req.body.llmProvider || 'openai'
+        request.llmProvider || 'openai'
       );
 
       if (!llmResponse.success || !llmResponse.answer) {
@@ -67,10 +66,10 @@ export class CardController {
       };
 
       console.log(`Card generated with quality score: ${qualityCheck.score}`);
-      res.json(response);
+      return res.json(response);
     } catch (error) {
-      console.error('Error generating card:', error);
-      next(error);
+      console.error('Error exporting Anki package:', error);
+      return next(error);
     }
   };
 
@@ -80,9 +79,9 @@ export class CardController {
   generateCards = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { questions, settings }: {
-        questions: string[] | { question: string; imageUrl?: string }[];
+        questions: string[];
         settings?: {
-          llmProvider?: 'openai' | 'claude';
+          llmProvider?: 'openai' | 'claude' | 'zhipu';
           deckName?: string;
           tags?: string[];
           cardType?: AnkiCard['cardType'];
@@ -115,14 +114,12 @@ export class CardController {
       for (let i = 0; i < questions.length; i += concurrencyLimit) {
         const batch = questions.slice(i, i + concurrencyLimit);
         const batchPromises = batch.map(async (q, batchIndex) => {
-          const questionText = typeof q === 'string' ? q : q.question;
-          const imageUrl = typeof q === 'string' ? undefined : q.imageUrl;
+          const questionText = q;
           const index = i + batchIndex;
 
           try {
-            const llmResponse = await this.llmService.generateAnswerWithImage(
+            const llmResponse = await this.llmService.generateAnswer(
               questionText,
-              imageUrl || '',
               settings?.llmProvider || 'openai'
             );
 
@@ -180,10 +177,10 @@ export class CardController {
         message: `Generated ${cards.length} cards successfully${errors.length > 0 ? ` with ${errors.length} errors` : ''}`
       };
 
-      res.json(response);
+      return res.json(response);
     } catch (error) {
       console.error('Error generating cards:', error);
-      next(error);
+      return next(error);
     }
   };
 
@@ -231,12 +228,12 @@ export class CardController {
 
       console.log(`Successfully generated Anki package: ${filename} (${apkgBuffer.length} bytes)`);
 
-      res.send(apkgBuffer);
+      return res.send(apkgBuffer);
     } catch (error) {
       console.error('Error exporting Anki package:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: `Failed to export Anki package: ${errorMessage}`
       } as ApiResponse);
@@ -267,10 +264,10 @@ export class CardController {
         message: `Quality check completed. Score: ${qualityCheck.score}/100`
       };
 
-      res.json(response);
+      return res.json(response);
     } catch (error) {
       console.error('Error checking quality:', error);
-      next(error);
+      return next(error);
     }
   };
 
@@ -320,21 +317,10 @@ ${suggestions.map((suggestion, i) => `${i + 1}. ${suggestion}`).join('\n')}
 改进说明：[简要说明改进点]
 `;
 
-      const llmResponse = await this.llmService['callOpenAI']({
-        model: process.env.OPENAI_MODEL || 'gpt-4',
-        messages: [
-          {
-            role: 'system',
-            content: '你是一个专业的学习卡片设计师，擅长创建高质量、易记的Anki卡片。'
-          },
-          {
-            role: 'user',
-            content: improvementPrompt
-          }
-        ],
-        max_tokens: 800,
-        temperature: 0.7
-      });
+      const llmResponse = await this.llmService.generateAnswer(
+        improvementPrompt,
+        'openai'
+      );
 
       if (!llmResponse.success || !llmResponse.answer) {
         return res.status(500).json({
@@ -364,10 +350,10 @@ ${suggestions.map((suggestion, i) => `${i + 1}. ${suggestion}`).join('\n')}
 
       console.log(`Card improved with quality score: ${qualityCheck.score}`);
 
-      res.json(response);
+      return res.json(response);
     } catch (error) {
       console.error('Error improving card:', error);
-      next(error);
+      return next(error);
     }
   };
 
