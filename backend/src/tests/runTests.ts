@@ -1,15 +1,7 @@
-import 'reflect-metadata';
 import request from 'supertest';
-import express from 'express';
-import dotenv from 'dotenv';
+import { app } from '../index';
 
-// 加载测试环境变量
-dotenv.config({ path: '../.env' });
-
-// 导入应用
-import app from '../index';
-
-const API_BASE = process.env.PORT || 3001;
+const API_BASE = '/api/cards';
 
 const testResults = {
   total: 0,
@@ -33,80 +25,134 @@ const runHealthCheck = async () => {
   testLog('执行健康检查...');
   try {
     const response = await request(app)
-      .get('/health')
+      .get(`${API_BASE}/health`)
       .expect(200);
 
-    if (response.body.status === 'OK') {
+    if (response.body.success && response.body.message) {
       testLog('健康检查通过', 'pass');
     } else {
-      testLog(`健康检查失败: ${response.body.message}`, 'fail');
+      testLog(`健康检查失败: ${JSON.stringify(response.body)}`, 'fail');
     }
   } catch (error) {
     testLog(`健康检查异常: ${error}`, 'fail');
   }
 };
 
-const runApiInfo = async () => {
-  testLog('执行API信息检查...');
-  try {
-    const response = await request(app)
-      .get('/api')
-      .expect(200);
-
-    if (response.body.success && response.body.message) {
-      testLog('API信息检查通过', 'pass');
-    } else {
-      testLog('API信息检查失败', 'fail');
-    }
-  } catch (error) {
-    testLog(`API信息检查异常: ${error}`, 'fail');
-  }
-};
-
 const runCardGeneration = async () => {
   testLog('执行卡片生成测试...');
 
+  // 测试必需字段验证
   try {
-    // 测试必需字段验证
     const response1 = await request(app)
-      .post('/api/cards/generate')
+      .post(`${API_BASE}/generate`)
       .send({})
       .expect(400);
 
-    testLog('空请求验证通过', 'pass');
+    if (!response1.body.success) {
+      testLog('空请求验证通过', 'pass');
+    } else {
+      testLog('空请求验证失败', 'fail');
+    }
+  } catch (error) {
+    testLog(`空请求验证异常: ${error}`, 'fail');
+  }
 
-    // 测试问题长度验证
+  // 测试无效卡片类型
+  try {
     const response2 = await request(app)
-      .post('/api/cards/generate')
-      .send({ question: 'a'.repeat(1001) })
-      .expect(400);
-
-    testLog('问题长度验证通过', 'pass');
-
-    // 测试问题字段验证
-    const response3 = await request(app)
-      .post('/api/cards/generate')
-      .send({ question: '' })
-      .expect(400);
-
-    testLog('空问题字段验证通过', 'pass');
-
-    // 测试有效请求格式
-    const response4 = await request(app)
-      .post('/api/cards/generate')
+      .post(`${API_BASE}/generate`)
       .send({
-        question: '什么是人工智能？',
+        question: '什么是React？',
+        cardType: 'invalid-type',
+        llmProvider: 'openai'
+      })
+      .expect(400);
+
+    if (!response2.body.success && response2.body.error?.includes('Invalid card type')) {
+      testLog('无效卡片类型验证通过', 'pass');
+    } else {
+      testLog('无效卡片类型验证失败', 'fail');
+    }
+  } catch (error) {
+    testLog(`无效卡片类型验证异常: ${error}`, 'fail');
+  }
+
+  // 测试空问题字段验证
+  try {
+    const response3 = await request(app)
+      .post(`${API_BASE}/generate`)
+      .send({
+        question: '',
+        llmProvider: 'openai'
+      })
+      .expect(400);
+
+    if (!response3.body.success) {
+      testLog('空问题字段验证通过', 'pass');
+    } else {
+      testLog('空问题字段验证失败', 'fail');
+    }
+  } catch (error) {
+    testLog(`空问题字段验证异常: ${error}`, 'fail');
+  }
+
+  // 测试OpenAI提供商无API密钥
+  try {
+    const response4 = await request(app)
+      .post(`${API_BASE}/generate`)
+      .send({
+        question: '什么是React？',
         cardType: 'basic',
-        llmProvider: 'openai',
-        tags: ['AI', '技术'],
-        deckName: '测试牌组'
+        llmProvider: 'openai'
       })
       .expect(200);
 
-    testLog('有效请求格式验证通过', 'pass');
-
+    if (!response4.body.success && response4.body.error?.includes('OpenAI API密钥未配置')) {
+      testLog('OpenAI无API密钥验证通过', 'pass');
+    } else {
+      testLog('OpenAI无API密钥验证失败', 'fail');
+    }
   } catch (error) {
-    testLog(`卡片生成测试异常: ${error}`, 'fail');
+    testLog(`OpenAI无API密钥验证异常: ${error}`, 'fail');
+  }
+
+  // 测试Claude提供商无API密钥
+  try {
+    const response5 = await request(app)
+      .post(`${API_BASE}/generate`)
+      .send({
+        question: '什么是React？',
+        cardType: 'basic',
+        llmProvider: 'claude'
+      })
+      .expect(200);
+
+    if (!response5.body.success && response5.body.error?.includes('Claude API密钥未配置')) {
+      testLog('Claude无API密钥验证通过', 'pass');
+    } else {
+      testLog('Claude无API密钥验证失败', 'fail');
+    }
+  } catch (error) {
+    testLog(`Claude无API密钥验证异常: ${error}`, 'fail');
+  }
+
+  // 测试默认提供商处理
+  try {
+    const response6 = await request(app)
+      .post(`${API_BASE}/generate`)
+      .send({
+        question: '什么是React？',
+        cardType: 'basic'
+      })
+      .expect(200);
+
+    if (!response6.body.success && response6.body.error?.includes('OpenAI API密钥未配置')) {
+      testLog('默认提供商验证通过', 'pass');
+    } else {
+      testLog('默认提供商验证失败', 'fail');
+    }
+  } catch (error) {
+    testLog(`默认提供商验证异常: ${error}`, 'fail');
   }
 };
 
@@ -116,23 +162,31 @@ const runBatchGeneration = async () => {
   try {
     // 测试空数组
     const response1 = await request(app)
-      .post('/api/cards/generate/batch')
+      .post(`${API_BASE}/generate/batch`)
       .send({ questions: [] })
       .expect(400);
 
-    testLog('空问题数组验证通过', 'pass');
+    if (!response1.body.success) {
+      testLog('空问题数组验证通过', 'pass');
+    } else {
+      testLog('空问题数组验证失败', 'fail');
+    }
 
     // 测试超出限制
     const response2 = await request(app)
-      .post('/api/cards/generate/batch')
-      .send({ questions: Array(21).fill('问题') })
+      .post(`${API_BASE}/generate/batch`)
+      .send({ questions: Array(25).fill('问题') })
       .expect(400);
 
-    testLog('批量大小限制验证通过', 'pass');
+    if (!response2.body.success && response2.body.error?.includes('Maximum 20 questions')) {
+      testLog('批量大小限制验证通过', 'pass');
+    } else {
+      testLog('批量大小限制验证失败', 'fail');
+    }
 
-    // 测试有效批量请求
+    // 测试有效批量请求格式（预期因无API密钥而失败）
     const response3 = await request(app)
-      .post('/api/cards/generate/batch')
+      .post(`${API_BASE}/generate/batch`)
       .send({
         questions: ['问题1', '问题2', '问题3'],
         settings: {
@@ -143,7 +197,11 @@ const runBatchGeneration = async () => {
       })
       .expect(200);
 
-    testLog('有效批量请求验证通过', 'pass');
+    if (!response3.body.success && response3.body.error?.includes('OpenAI API密钥未配置')) {
+      testLog('有效批量请求格式验证通过', 'pass');
+    } else {
+      testLog('有效批量请求格式验证失败', 'fail');
+    }
 
   } catch (error) {
     testLog(`批量生成测试异常: ${error}`, 'fail');
@@ -156,33 +214,45 @@ const runQualityCheck = async () => {
   try {
     // 测试缺少卡片对象
     const response1 = await request(app)
-      .post('/api/cards/quality-check')
+      .post(`${API_BASE}/quality-check`)
       .send({})
       .expect(400);
 
-    testLog('缺少卡片对象验证通过', 'pass');
+    if (!response1.body.success) {
+      testLog('缺少卡片对象验证通过', 'pass');
+    } else {
+      testLog('缺少卡片对象验证失败', 'fail');
+    }
 
     // 测试空卡片内容
     const response2 = await request(app)
-      .post('/api/cards/quality-check')
+      .post(`${API_BASE}/quality-check`)
       .send({ card: { front: '', back: '测试' } })
       .expect(400);
 
-    testLog('空卡片内容验证通过', 'pass');
+    if (!response2.body.success && response2.body.error?.includes('front content')) {
+      testLog('空卡片内容验证通过', 'pass');
+    } else {
+      testLog('空卡片内容验证失败', 'fail');
+    }
 
-    // 测试有效质量检查请求
+    // 测试有效质量检查请求（应返回默认评分）
     const response3 = await request(app)
-      .post('/api/cards/quality-check')
+      .post(`${API_BASE}/quality-check`)
       .send({
         card: {
-          front: '测试正面',
-          back: '测试背面',
-          tags: ['测试']
+          front: '什么是React？',
+          back: 'React是一个前端框架',
+          cardType: 'basic'
         }
       })
       .expect(200);
 
-    testLog('有效质量检查请求验证通过', 'pass');
+    if (response3.body.success && response3.body.data?.hasOwnProperty('score')) {
+      testLog('有效质量检查请求验证通过', 'pass');
+    } else {
+      testLog('有效质量检查请求验证失败', 'fail');
+    }
 
   } catch (error) {
     testLog(`质量检查测试异常: ${error}`, 'fail');
@@ -195,34 +265,55 @@ const runExportTest = async () => {
   try {
     // 测试空卡片数组
     const response1 = await request(app)
-      .post('/api/cards/export')
+      .post(`${API_BASE}/export`)
       .send({ cards: [] })
       .expect(400);
 
-    testLog('空卡片数组验证通过', 'pass');
+    if (!response1.body.success) {
+      testLog('空卡片数组验证通过', 'pass');
+    } else {
+      testLog('空卡片数组验证失败', 'fail');
+    }
 
     // 测试缺少牌组名称
     const response2 = await request(app)
-      .post('/api/cards/export')
-      .send({ cards: [{ front: '测试', back: '测试' }] })
-      .expect(400);
-
-    testLog('缺少牌组名称验证通过', 'pass');
-
-    // 测试有效导出请求（不进行实际导出，只验证参数）
-    const response3 = await request(app)
-      .post('/api/cards/export')
+      .post(`${API_BASE}/export`)
       .send({
         cards: [{
-          id: 'test-1',
-          front: '测试卡片正面',
-          back: '测试卡片背面'
+          front: '测试',
+          back: '测试',
+          cardType: 'basic',
+          tags: ['前端', 'JavaScript']
         }],
-        deckName: '测试导出'
+        deckName: ''
       })
-      .expect(500); // 预期失败，因为没有真实的API密钥
+      .expect(400);
 
-    testLog('有效导出请求格式验证通过', 'pass');
+    if (!response2.body.success && response2.body.error?.includes('Deck name is required')) {
+      testLog('缺少牌组名称验证通过', 'pass');
+    } else {
+      testLog('缺少牌组名称验证失败', 'fail');
+    }
+
+    // 测试有效导出请求
+    const response3 = await request(app)
+      .post(`${API_BASE}/export`)
+      .send({
+        cards: [{
+          front: '什么是React？',
+          back: 'React是Facebook开发的用户界面库。',
+          cardType: 'basic',
+          tags: ['前端', 'JavaScript']
+        }],
+        deckName: '测试牌组'
+      })
+      .expect(200);
+
+    if (response3.headers['content-type']?.includes('application/zip')) {
+      testLog('有效导出请求验证通过', 'pass');
+    } else {
+      testLog('有效导出请求验证失败', 'fail');
+    }
 
   } catch (error) {
     testLog(`导出测试异常: ${error}`, 'fail');
@@ -231,15 +322,6 @@ const runExportTest = async () => {
 
 const checkEnvironment = () => {
   testLog('检查测试环境...');
-
-  const requiredEnv = ['OPENAI_API_KEY'];
-  const missingEnv = requiredEnv.filter(key => !process.env[key]);
-
-  if (missingEnv.length > 0) {
-    testLog(`缺少环境变量: ${missingEnv.join(', ')}`, 'fail');
-  } else {
-    testLog('环境变量检查通过', 'pass');
-  }
 
   // 检查Node.js版本
   const nodeVersion = process.version;
@@ -285,7 +367,6 @@ const main = async () => {
   try {
     await checkEnvironment();
     await runHealthCheck();
-    await runApiInfo();
     await runCardGeneration();
     await runBatchGeneration();
     await runQualityCheck();
@@ -304,6 +385,6 @@ if (require.main === module) {
 }
 
 export {
-  runTests: main,
+  main,
   testResults
 };

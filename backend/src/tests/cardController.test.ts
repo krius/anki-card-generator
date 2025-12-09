@@ -23,7 +23,7 @@ describe('CardController', () => {
     jest.clearAllMocks();
 
     // Setup default mock returns
-    mockLLMService.prototype.generateAnswerWithImage = jest.fn().mockResolvedValue({
+    mockLLMService.prototype.generateAnswer = jest.fn().mockResolvedValue({
       success: true,
       answer: '这是一个测试回答',
       tokensUsed: 150,
@@ -63,9 +63,8 @@ describe('CardController', () => {
       expect(response.body.data).toHaveProperty('front', validRequest.question);
       expect(response.body.data).toHaveProperty('back');
       expect(response.body.data).toHaveProperty('qualityCheck');
-      expect(mockLLMService.prototype.generateAnswerWithImage).toHaveBeenCalledWith(
+      expect(mockLLMService.prototype.generateAnswer).toHaveBeenCalledWith(
         validRequest.question,
-        undefined,
         'openai'
       );
       expect(mockLLMService.prototype.qualityCheck).toHaveBeenCalled();
@@ -290,7 +289,7 @@ describe('CardController', () => {
       app.post('/api/cards/generate', cardController.generateCard);
 
       // Mock LLM error
-      mockLLMService.prototype.generateAnswerWithImage = jest.fn().mockResolvedValue({
+      mockLLMService.prototype.generateAnswer = jest.fn().mockResolvedValue({
         success: false,
         error: 'API rate limit exceeded'
       });
@@ -366,7 +365,7 @@ describe('CardController Integration', () => {
     };
 
     // Mock successful generation
-    mockLLMService.prototype.generateAnswerWithImage = jest.fn().mockResolvedValue({
+    mockLLMService.prototype.generateAnswer = jest.fn().mockResolvedValue({
       success: true,
       answer: '机器学习是人工智能的一个分支，它使计算机能够在没有明确编程的情况下学习和改进。',
       tokensUsed: 200,

@@ -29,8 +29,8 @@ module.exports = {
       statements: 80
     }
   },
-  moduleNameMapping: {
-    '^@/(.*)$': '<rootDir>/node_modules/$1'
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1'
   },
   moduleFileExtensions: [
     'ts',
