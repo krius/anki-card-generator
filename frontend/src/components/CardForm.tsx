@@ -93,131 +93,169 @@ export const CardForm: React.FC<CardFormProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 bg-white rounded-lg shadow-md border border-gray-200 p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-        <Sparkles className="w-6 h-6 text-primary-600" />
-        Generate Anki Card
-      </h2>
+    <form onSubmit={handleSubmit} className="space-y-8 bg-white rounded-2xl shadow-xl border border-gray-100 p-6 lg:p-8 transition-all duration-300 hover:shadow-2xl">
+      <div className="flex items-center gap-3 mb-2">
+        <div className="p-2.5 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-lg">
+          <Sparkles className="w-6 h-6 text-white" />
+        </div>
+        <h2 className="text-3xl font-bold text-gray-900">创建智能卡片</h2>
+      </div>
 
       {/* 问题输入 */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Question <span className="text-red-500">*</span>
+        <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+          输入问题 <span className="text-red-500">*</span>
+          <span className="text-xs text-gray-400 font-normal ml-2">({formData.question.length}/1000)</span>
         </label>
         <textarea
           value={formData.question}
           onChange={(e) => handleInputChange('question', e.target.value)}
-          className="textarea-field"
-          placeholder="Enter your learning question..."
-          rows={3}
+          className="w-full px-5 py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none hover:border-gray-300 text-gray-800 placeholder-gray-400 text-lg"
+          placeholder="输入你想要学习的问题..."
+          rows={4}
           maxLength={1000}
           disabled={isLoading}
         />
-        <div className="mt-1 text-sm text-gray-500 text-right">
-          {formData.question.length}/1000
-        </div>
+        <p className="mt-2 text-sm text-gray-500 flex items-center gap-2">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          清晰的问题有助于AI生成更准确的答案
+        </p>
       </div>
 
       {/* 设置选项 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Card Type
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold text-gray-700 mb-3">
+            卡片类型
           </label>
           <select
             value={formData.cardType}
             onChange={(e) => handleInputChange('cardType', e.target.value)}
-            className="input-field"
+            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-300 bg-white text-gray-800"
             disabled={isLoading}
           >
-            <option value="basic">Basic Q&A</option>
-            <option value="cloze">Fill-in-the-blank</option>
-            <option value="basic-reversed">Basic Reversed</option>
-            <option value="input">Input</option>
+            <option value="basic">基础问答 (Q&A)</option>
+            <option value="cloze">填空题</option>
+            <option value="basic-reversed">双向问答</option>
+            <option value="input">输入题</option>
           </select>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Deck Name
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold text-gray-700 mb-3">
+            牌组名称
           </label>
           <input
             type="text"
             value={formData.deckName}
             onChange={(e) => handleInputChange('deckName', e.target.value)}
-            className="input-field"
-            placeholder="Default"
+            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-300"
+            placeholder="默认牌组"
             maxLength={100}
             disabled={isLoading}
           />
         </div>
       </div>
 
-      {/* LLM Provider选择 */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          AI Model
+      {/* AI模型选择 */}
+      <div className="space-y-3">
+        <label className="block text-sm font-semibold text-gray-700">
+          选择AI模型
         </label>
-        <div className="flex gap-4">
-          <label className="flex items-center">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <label className="relative">
             <input
               type="radio"
               value="openai"
               checked={formData.llmProvider === 'openai'}
               onChange={(e) => handleInputChange('llmProvider', e.target.value)}
-              className="mr-2"
+              className="sr-only peer"
               disabled={isLoading}
             />
-            <span className="text-sm">OpenAI GPT-4</span>
+            <div className="p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 peer-checked:border-blue-500 peer-checked:bg-blue-50 hover:border-gray-300 bg-white">
+              <div className="flex items-center gap-3">
+                <div className="w-5 h-5 border-2 rounded-full peer-checked:border-blue-500 peer-checked:bg-blue-500 transition-colors">
+                  <div className="w-full h-full rounded-full bg-white scale-0 peer-checked:scale-50 transition-transform"></div>
+                </div>
+                <div>
+                  <div className="font-medium text-gray-900">OpenAI</div>
+                  <div className="text-xs text-gray-500">GPT-4</div>
+                </div>
+              </div>
+            </div>
           </label>
-          <label className="flex items-center">
+
+          <label className="relative">
             <input
               type="radio"
               value="claude"
               checked={formData.llmProvider === 'claude'}
               onChange={(e) => handleInputChange('llmProvider', e.target.value)}
-              className="mr-2"
+              className="sr-only peer"
               disabled={isLoading}
             />
-            <span className="text-sm">Claude</span>
+            <div className="p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 peer-checked:border-blue-500 peer-checked:bg-blue-50 hover:border-gray-300 bg-white">
+              <div className="flex items-center gap-3">
+                <div className="w-5 h-5 border-2 rounded-full peer-checked:border-blue-500 peer-checked:bg-blue-500 transition-colors">
+                  <div className="w-full h-full rounded-full bg-white scale-0 peer-checked:scale-50 transition-transform"></div>
+                </div>
+                <div>
+                  <div className="font-medium text-gray-900">Claude</div>
+                  <div className="text-xs text-gray-500">Anthropic</div>
+                </div>
+              </div>
+            </div>
           </label>
-          <label className="flex items-center">
+
+          <label className="relative">
             <input
               type="radio"
               value="zhipu"
               checked={formData.llmProvider === 'zhipu'}
               onChange={(e) => handleInputChange('llmProvider', e.target.value)}
-              className="mr-2"
+              className="sr-only peer"
               disabled={isLoading}
             />
-            <span className="text-sm">智谱AI GLM-4</span>
+            <div className="p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 peer-checked:border-blue-500 peer-checked:bg-blue-50 hover:border-gray-300 bg-white">
+              <div className="flex items-center gap-3">
+                <div className="w-5 h-5 border-2 rounded-full peer-checked:border-blue-500 peer-checked:bg-blue-500 transition-colors">
+                  <div className="w-full h-full rounded-full bg-white scale-0 peer-checked:scale-50 transition-transform"></div>
+                </div>
+                <div>
+                  <div className="font-medium text-gray-900">智谱AI</div>
+                  <div className="text-xs text-gray-500">GLM-4</div>
+                </div>
+              </div>
+            </div>
           </label>
         </div>
       </div>
 
       {/* 标签 */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Tags (Optional)
+      <div className="space-y-3">
+        <label className="block text-sm font-semibold text-gray-700">
+          标签 <span className="text-xs text-gray-400 font-normal ml-2">(按回车添加)</span>
         </label>
         <input
           type="text"
           onKeyDown={addTag}
-          className="input-field"
-          placeholder="Enter a tag and press Enter"
+          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-300"
+          placeholder="输入标签后按回车添加"
           disabled={isLoading}
         />
-        <div className="flex flex-wrap gap-2 mt-2">
+        <div className="flex flex-wrap gap-2">
           {formData.tags?.map((tag) => (
             <span
               key={tag}
-              className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-primary-100 text-primary-800"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm bg-gradient-to-r from-blue-50 to-purple-50 text-blue-700 border border-blue-200 group"
             >
-              {tag}
+              <span>{tag}</span>
               <button
                 type="button"
                 onClick={() => removeTag(tag)}
-                className="hover:text-primary-900 transition-colors"
+                className="w-4 h-4 hover:bg-blue-200 rounded-full transition-colors flex items-center justify-center"
                 disabled={isLoading}
               >
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -230,7 +268,7 @@ export const CardForm: React.FC<CardFormProps> = ({
       </div>
 
       {/* 提交按钮 */}
-      <div className="flex justify-end gap-3">
+      <div className="flex justify-end gap-4 pt-4">
         <button
           type="button"
           onClick={() => {
@@ -242,25 +280,25 @@ export const CardForm: React.FC<CardFormProps> = ({
               llmProvider: 'openai',
             });
           }}
-          className="btn-secondary"
+          className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold rounded-xl transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={isLoading}
         >
-          Reset
+          重置表单
         </button>
         <button
           type="submit"
-          className="btn-primary flex items-center gap-2"
+          className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-xl transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3 shadow-lg"
           disabled={isLoading || !formData.question.trim()}
         >
           {isLoading ? (
             <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Generating...
+              <Loader2 className="w-5 h-5 animate-spin" />
+              生成中...
             </>
           ) : (
             <>
-              <Sparkles className="w-4 h-4" />
-              Generate Card
+              <Sparkles className="w-5 h-5" />
+              生成卡片
             </>
           )}
         </button>

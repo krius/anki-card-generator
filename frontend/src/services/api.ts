@@ -16,11 +16,15 @@ const api = axios.create({
 // 请求拦截器
 api.interceptors.request.use(
   (config) => {
-    console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`);
+    }
     return config;
   },
   (error) => {
-    console.error('API Request Error:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('API Request Error:', error);
+    }
     return Promise.reject(error);
   }
 );
@@ -28,11 +32,15 @@ api.interceptors.request.use(
 // 响应拦截器
 api.interceptors.response.use(
   (response: AxiosResponse<ApiResponse>) => {
-    console.log(`API Response: ${response.status} ${response.config.url}`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`API Response: ${response.status} ${response.config.url}`);
+    }
     return response;
   },
   (error) => {
-    console.error('API Response Error:', error.response?.data || error.message);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('API Response Error:', error.response?.data || error.message);
+    }
 
     // 统一错误处理
     if (error.response?.status === 429) {
@@ -66,7 +74,18 @@ export const apiService = {
   // 健康检查
   async healthCheck(): Promise<ApiResponse> {
     const response = await api.get('/health');
-    return response.data;
+    // 转换后端响应格式为前端期望格式
+    if (response.data.status === 'OK') {
+      return {
+        success: true,
+        data: response.data,
+        message: response.data.message
+      };
+    }
+    return {
+      success: false,
+      error: response.data.message || 'Health check failed'
+    };
   },
 
   // 获取API信息
