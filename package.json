@@ -1,33 +1,32 @@
 {
   "name": "anki-card-generator",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "description": "轻量化Anki卡片生成器 - 基于AI的智能学习卡片生成工具",
-  "main": "backend/dist/index.js",
+  "main": "backend-python/app/main.py",
   "scripts": {
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "dev:backend": "cd backend && npm run dev",
+    "dev:backend": "cd backend-python && ./run_server.sh",
     "dev:frontend": "cd frontend && npm start",
-    "build": "npm run build:backend && npm run build:frontend",
-    "build:backend": "cd backend && npm run build",
+    "build": "npm run build:frontend",
     "build:frontend": "cd frontend && npm run build",
-    "start": "npm run build && npm run start:backend",
-    "start:backend": "cd backend && npm start",
-        "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install",
-    "test": "npm run test:backend && npm run test:frontend",
-    "test:backend": "cd backend && npm test",
+    "start": "npm run start:backend",
+    "start:backend": "cd backend-python && ./run_server.sh",
+    "install:all": "npm install && cd frontend && npm install && cd ../backend-python && pip install -r requirements.txt",
+    "test": "npm run test:frontend",
     "test:frontend": "cd frontend && npm test",
-    "clean": "npm run clean:backend && npm run clean:frontend",
-    "clean:backend": "cd backend && rm -rf dist node_modules",
-    "clean:frontend": "cd frontend && rm -rf build node_modules"
+    "clean": "npm run clean:frontend",
+    "clean:frontend": "cd frontend && rm -rf build node_modules",
+    "setup:backend": "cd backend-python && python -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt"
   },
   "keywords": [
     "anki",
     "flashcard",
     "ai",
     "llm",
-    "typescript",
+    "langgraph",
+    "python",
     "react",
-    "nodejs",
+    "fastapi",
     "education"
   ],
   "author": "Anki Card Generator Team",
@@ -37,6 +36,7 @@
   },
   "engines": {
     "node": ">=18.0.0",
-    "npm": ">=8.0.0"
+    "npm": ">=8.0.0",
+    "python": ">=3.9.0"
   }
 }

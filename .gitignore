@@ -6,7 +6,6 @@ yarn-error.log*
 
 # Production builds
 /frontend/build
-/backend/dist
 
 # Environment variables
 .env
@@ -30,7 +29,7 @@ yarn-error.log*
 Thumbs.db
 
 # Logs
-logs
+logs/
 *.log
 
 # Temporary files
@@ -42,3 +41,32 @@ temp/
 
 # Anki files (generated)
 *.apkg
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv/
+
+# Python distribution / packaging
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+.mypy_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints

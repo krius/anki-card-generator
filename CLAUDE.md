@@ -6,9 +6,9 @@
 
 ### 技术栈
 - **前端**: React 19 + TypeScript + Tailwind CSS
-- **后端**: Node.js + Express + TypeScript
-- **数据库**: SQLite
+- **后端**: Python + FastAPI + LangGraph 1.0.4
 - **AI服务**: 智谱AI GLM-4
+- **工作流**: LangGraph状态驱动架构
 
 ### 项目目标
 专注于个人使用场景，保持简单高效，避免过度设计。
@@ -41,8 +41,9 @@ rm -rf node_modules/.cache && npm start
 
 **目录路径**
 - 前端命令: `cd frontend && npm start`
-- 后端命令: `cd backend && npm run dev`
+- 后端命令: `cd backend-python && ./run_server.sh`
 - 根目录: `npm run dev` (并行启动)
+- Python环境: `cd backend-python && source .venv/bin/activate`
 
 ## 🎯 核心开发规则
 
@@ -116,15 +117,26 @@ frontend/src/
 ├── types/        # 类型定义
 └── utils/        # 工具函数
 
-backend/src/
-├── controllers/  # 业务逻辑
-├── services/     # 核心服务
-├── routes/       # 路由定义
-└── types/        # 类型定义
+backend-python/
+├── app/
+│   ├── api/       # API路由
+│   │   └── v1/
+│   │       └── endpoints/
+│   ├── core/      # 核心配置
+│   ├── graph/     # LangGraph工作流
+│   │   ├── nodes.py
+│   │   ├── states.py
+│   │   └── workflows.py
+│   ├── schemas/   # Pydantic模型
+│   ├── services/  # 业务服务
+│   └── main.py    # 应用入口
+├── .venv/         # Python虚拟环境
+├── requirements.txt
+└── run_server.sh
 ```
 
 ---
 
-**最后更新**: 2025-12-09
+**最后更新**: 2025-12-10
 **原则**: 简单够用，快速迭代
-**详细规划**: 查看 [TODO.md](./TODO.md)
+**架构升级**: 已迁移至 LangGraph 1.0.4 + FastAPI
