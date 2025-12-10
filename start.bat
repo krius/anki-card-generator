@@ -69,7 +69,7 @@ if not exist "node_modules" (
 )
 
 REM 启动前端（新窗口）
-start "Anki Frontend" cmd /k "npm run dev"
+start "Anki Frontend" cmd /k "npm start"
 
 cd ..
 

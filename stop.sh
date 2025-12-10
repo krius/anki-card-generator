@@ -60,7 +60,7 @@ clean_logs() {
     read -p "是否删除日志文件？(y/n): " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        rm -f backend.log frontend.log
+        rm -rf logs
         echo -e "${GREEN}✅ 日志文件已删除${NC}"
     fi
 }

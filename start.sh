@@ -67,7 +67,7 @@ start_backend() {
 
     # 启动后端（后台运行）
     echo -e "${GREEN}🚀 后端服务启动在 http://localhost:8000${NC}"
-    nohup uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 > ../backend.log 2>&1 &
+    nohup uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 > ../logs/backend.log 2>&1 &
     BACKEND_PID=$!
     echo "后端进程 PID: $BACKEND_PID"
 
@@ -87,7 +87,7 @@ start_frontend() {
 
     # 启动前端（后台运行）
     echo -e "${GREEN}🚀 前端服务启动在 http://localhost:3000${NC}"
-    nohup npm run dev > ../frontend.log 2>&1 &
+    nohup npm start > ../logs/frontend.log 2>&1 &
     FRONTEND_PID=$!
     echo "前端进程 PID: $FRONTEND_PID"
 
@@ -111,8 +111,10 @@ main() {
     check_dependencies
     check_env
 
+    # 创建日志目录
+    mkdir -p logs
     # 清理旧的日志文件
-    rm -f backend.log frontend.log
+    rm -f logs/backend.log logs/frontend.log
 
     start_backend
     sleep 3  # 等待后端启动
@@ -127,8 +129,8 @@ main() {
     echo "API文档: http://localhost:8000/docs"
     echo ""
     echo "日志文件："
-    echo "  - 后端日志: backend.log"
-    echo "  - 前端日志: frontend.log"
+    echo "  - 后端日志: logs/backend.log"
+    echo "  - 前端日志: logs/frontend.log"
     echo ""
     echo "停止服务请运行: ./stop.sh"
     echo ""

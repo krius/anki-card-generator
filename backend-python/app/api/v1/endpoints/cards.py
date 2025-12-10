@@ -1,6 +1,6 @@
 from typing import List, Optional
 from uuid import uuid4
-from fastapi import APIRouter, HTTPException, BackgroundTasks, Query
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Query, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 import asyncio
 
