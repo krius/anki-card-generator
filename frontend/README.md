@@ -1,46 +1,74 @@
-# Getting Started with Create React App
+# Anki AI Card Generator - Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+基于 React 19 + TypeScript + Tailwind CSS 的 Anki AI卡片生成器前端应用。
 
-## Available Scripts
+## 功能特性
 
-In the project directory, you can run:
+- 🎯 智能卡片生成界面
+- 📊 实时生成进度追踪
+- 🎨 响应式设计，支持移动端
+- 💾 卡片预览与编辑
+- 📤 批量导出功能
+- 🔔 友好的错误提示
 
-### `npm start`
+## 技术栈
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+- **React 19** - 最新版本，支持并发特性
+- **TypeScript** - 类型安全的JavaScript
+- **Tailwind CSS** - 实用优先的CSS框架
+- **Axios** - HTTP客户端
+- **React Router** - 路由管理
+- **React Toastify** - 消息提示
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+## 项目结构
 
-### `npm test`
+```
+src/
+├── components/         # 可复用组件
+│   ├── Card/          # 卡片相关组件
+│   ├── Form/          # 表单组件
+│   └── Layout/        # 布局组件
+├── pages/             # 页面组件
+├── services/          # API调用服务
+├── types/             # TypeScript类型定义
+├── utils/             # 工具函数
+└── styles/            # 全局样式
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## 开发命令
 
-### `npm run build`
+```bash
+# 安装依赖
+npm install
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+# 启动开发服务器
+npm run dev
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+# 构建生产版本
+npm run build
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+# 运行测试
+npm test
 
-### `npm run eject`
+# 代码检查
+npm run lint
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+# 格式化代码
+npm run format
+```
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## 环境配置
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+创建 `.env` 文件：
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+```env
+VITE_API_BASE_URL=http://localhost:8000
+```
 
-## Learn More
+## 开发说明
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+1. 所有组件必须使用TypeScript
+2. 使用Tailwind CSS进行样式开发
+3. API调用统一使用services层
+4. 错误处理必须显示用户友好的提示
+5. 遵循项目的代码规范（见 ../.docs/RULES.md）

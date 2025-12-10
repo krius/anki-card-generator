@@ -53,6 +53,8 @@ env/
 ENV/
 .venv/
 
+.docs
+
 # Python distribution / packaging
 *.egg-info/
 .installed.cfg
