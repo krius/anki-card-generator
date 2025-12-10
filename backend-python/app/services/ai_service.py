@@ -2,8 +2,8 @@ from typing import Dict, Any, Optional
 import json
 import re
 from langchain_openai import ChatOpenAI
-from langchain.schema import HumanMessage, SystemMessage
-from langchain.callbacks.base import BaseCallbackHandler
+from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.callbacks import BaseCallbackHandler
 
 from ..core.config import settings
 from ..schemas.card import AnkiCard, QualityCheckResult, LLMResponse

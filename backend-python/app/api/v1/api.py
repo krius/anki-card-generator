@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
-from ..endpoints import cards
-from ..endpoints import cards_langgraph
+from .endpoints import cards
+from .endpoints import cards_langgraph
 
 api_router = APIRouter()
 

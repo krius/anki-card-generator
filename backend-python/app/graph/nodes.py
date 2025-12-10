@@ -6,6 +6,8 @@ from langgraph.constants import START, END
 
 from ..core.config import settings
 from ..schemas.card import AnkiCard, QualityCheckResult, LLMResponse
+from ..core.prompt_loader import prompt_loader
+from ..core.prompts import Prompts
 from .states import CardGenerationState, BatchGenerationState
 
 
@@ -24,21 +26,13 @@ class CardGenerationNodes:
     async def generate_answer(self, state: CardGenerationState) -> Dict[str, Any]:
         """生成答案节点"""
         try:
-            system_prompt = "你是一个专业的学习卡片设计师，擅长创建高质量、易记的Anki卡片。"
-            user_prompt = f"""
-请基于以下问题生成一个高质量的Anki学习卡片回答：
-
-问题：{state['question']}
-
-要求：
-1. 回答要准确、简洁明了
-2. 适合记忆和理解
-3. 重点突出关键概念
-4. 可以适当举例说明
-5. 长度控制在100-300字之间
-
-请直接给出回答内容，不要包含其他格式说明。
-"""
+            # 使用动态加载的 prompts
+            system_prompt = prompt_loader.get_prompt(Prompts.CARD_GENERATION, Prompts.SYSTEM)
+            user_prompt = prompt_loader.get_prompt(
+                Prompts.CARD_GENERATION,
+                Prompts.GENERATE_ANSWER,
+                question=state['question']
+            )
 
             messages = [
                 SystemMessage(content=system_prompt),
@@ -77,33 +71,15 @@ class CardGenerationNodes:
         """质量检查节点"""
         try:
             card = state['card']
-            system_prompt = "你是一个专业的Anki卡片质量评估师，擅长评估学习卡片的质量。"
-            user_prompt = f"""
-请对这个Anki学习卡片进行质量评估：
 
-卡片内容：
-正面：{card.front}
-背面：{card.back}
-
-请从以下维度评估（0-100分）：
-1. **准确性** (30分)：内容是否准确无误
-2. **清晰度** (25分)：表达是否清楚易懂
-3. **简洁性** (20分)：内容是否简洁不冗余
-4. **学习价值** (15分)：是否有助于学习和记忆
-5. **完整性** (10分)：信息是否相对完整
-
-请按以下格式回复：
-总分：XX分
-是否通过：是/否（总分≥70分通过）
-
-存在的问题：
-1. 问题描述
-2. 问题描述
-
-改进建议：
-1. 建议内容
-2. 建议内容
-"""
+            # 使用动态加载的 prompts
+            system_prompt = prompt_loader.get_prompt(Prompts.QUALITY_CHECK, Prompts.SYSTEM)
+            user_prompt = prompt_loader.get_prompt(
+                Prompts.QUALITY_CHECK,
+                Prompts.CHECK_QUALITY,
+                front=card.front,
+                back=card.back
+            )
 
             messages = [
                 SystemMessage(content=system_prompt),
@@ -146,31 +122,21 @@ class CardGenerationNodes:
             quality_check = state['quality_check']
             improvement_count = state.get('improvement_count', 0) + 1
 
-            system_prompt = "你是一个专业的Anki卡片设计师，擅长根据反馈改进学习卡片。"
-            user_prompt = f"""
-请根据以下反馈改进这个Anki学习卡片（第{improvement_count}次改进）：
+            # 格式化问题和建议
+            issues_text = "\n".join([f"{i+1}. {issue}" for i, issue in enumerate(quality_check.issues)])
+            suggestions_text = "\n".join([f"{i+1}. {suggestion}" for i, suggestion in enumerate(quality_check.suggestions)])
 
-原始卡片：
-正面：{card.front}
-背面：{card.back}
-
-存在的问题：
-{chr(10).join([f"{i+1}. {issue}" for i, issue in enumerate(quality_check.issues)])}
-
-改进建议：
-{chr(10).join([f"{i+1}. {suggestion}" for i, suggestion in enumerate(quality_check.suggestions)])}
-
-请提供一个改进后的卡片版本，要求：
-1. 保持准确性
-2. 提高清晰度
-3. 确保适合学习记忆
-4. 长度适中
-
-请按以下格式回复：
-改进的正面：[内容]
-改进的背面：[内容]
-改进说明：[简要说明改进点]
-"""
+            # 使用动态加载的 prompts
+            system_prompt = prompt_loader.get_prompt(Prompts.IMPROVEMENT, Prompts.SYSTEM)
+            user_prompt = prompt_loader.get_prompt(
+                Prompts.IMPROVEMENT,
+                Prompts.IMPROVE_CARD,
+                improvement_count=improvement_count,
+                front=card.front,
+                back=card.back,
+                issues=issues_text,
+                suggestions=suggestions_text
+            )
 
             # 使用较低的温度值以获得更稳定的改进结果
             self.llm.temperature = 0.3

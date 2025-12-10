@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     # CORS配置
     cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
 
+    # Prompts配置
+    prompts_dir: Optional[str] = None  # 自定义prompts目录路径，默认为 app/prompts
+
     @property
     def cors_origins_list(self) -> List[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]

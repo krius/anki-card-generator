@@ -1,7 +1,9 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional, Literal, Union, Dict, Any
+from typing import List, Optional, Literal, Union, Dict, Any, Generic, TypeVar
 from uuid import UUID
 from datetime import datetime
+
+T = TypeVar('T')
 
 
 class AnkiCardBase(BaseModel):
@@ -60,10 +62,10 @@ class LLMResponse(BaseModel):
     model: Optional[str] = None
 
 
-class ApiResponse(BaseModel):
+class ApiResponse(BaseModel, Generic[T]):
     """API响应包装器"""
     success: bool
-    data: Optional[Union[AnkiCard, List[AnkiCard], QualityCheckResult, dict]] = None
+    data: Optional[T] = None
     error: Optional[str] = None
     message: Optional[str] = None
 

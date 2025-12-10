@@ -108,7 +108,7 @@ async def generate_cards(request: BatchGenerationRequest, background_tasks: Back
                 "errors": result.get("errors", []),
                 "tokens_used": result.get("tokens_used", 0)
             },
-            message=f"Generated {len(cards)} cards successfully{len(result.get('errors', [])) > 0 and f' with {len(result.get(\"errors\", []))} errors' or ''}"
+            message=f"Generated {len(cards)} cards successfully"
         )
 
     except HTTPException:

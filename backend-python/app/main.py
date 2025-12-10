@@ -8,19 +8,19 @@ from .core.config import settings
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """�(}h�"""
-    # /��gL
+    """应用生命周期管理"""
+    # 启动时
     print(f"{settings.app_name} v{settings.app_version} is starting...")
     print(f"Server running at http://{settings.host}:{settings.port}")
     print(f"API docs available at http://{settings.host}:{settings.port}/docs")
 
     yield
 
-    # s��gL
+    # 关闭时
     print("Application is shutting down...")
 
 
-# �FastAPI�(
+# 创建FastAPI应用
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
@@ -30,7 +30,7 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# MnCORS
+# 添加CORS中间件
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
@@ -39,14 +39,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# +API�1
+# 包含API路由
 app.include_router(api_router, prefix="/api/v1")
 
 
-# e����
+# 健康检查
 @app.get("/health")
 async def health_check():
-    """e���"""
+    """健康检查端点"""
     return {
         "status": "healthy",
         "service": settings.app_name,
@@ -54,10 +54,10 @@ async def health_check():
     }
 
 
-# 9�
+# 根路径
 @app.get("/")
 async def root():
-    """9��o"""
+    """根路径端点"""
     return {
         "message": f"Welcome to {settings.app_name}",
         "version": settings.app_version,
