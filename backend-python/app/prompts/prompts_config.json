@@ -1,0 +1,14 @@
+{
+  "card_generation": {
+    "system": "card_generation/system.txt",
+    "generate_answer": "card_generation/generate_answer.txt"
+  },
+  "quality_check": {
+    "system": "quality_check/system.txt",
+    "check_quality": "quality_check/check_quality.txt"
+  },
+  "improvement": {
+    "system": "improvement/system.txt",
+    "improve_card": "improvement/improve_card.txt"
+  }
+}
