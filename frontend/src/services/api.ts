@@ -2,7 +2,7 @@ import axios, { AxiosResponse } from 'axios';
 import { ApiResponse, AnkiCard, CardGenerationRequest, QualityCheckResult, UserSettings } from '../types';
 
 // API基础配置
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 // 创建axios实例
 const api = axios.create({
@@ -75,28 +75,28 @@ export const apiService = {
   async healthCheck(): Promise<ApiResponse> {
     const response = await api.get('/health');
     // 转换后端响应格式为前端期望格式
-    if (response.data.status === 'OK') {
+    if (response.data.status === 'healthy') {
       return {
         success: true,
         data: response.data,
-        message: response.data.message
+        message: 'Backend is healthy'
       };
     }
     return {
       success: false,
-      error: response.data.message || 'Health check failed'
+      error: 'Health check failed'
     };
   },
 
   // 获取API信息
   async getApiInfo(): Promise<ApiResponse> {
-    const response = await api.get('/api');
+    const response = await api.get('/');
     return response.data;
   },
 
   // 生成单个卡片
   async generateCard(request: CardGenerationRequest): Promise<ApiResponse<AnkiCard & { qualityCheck: QualityCheckResult }>> {
-    const response = await api.post('/api/cards/generate', request);
+    const response = await api.post('/api/v1/cards/generate', request);
     return response.data;
   },
 
@@ -105,13 +105,13 @@ export const apiService = {
     cards: (AnkiCard & { qualityCheck: QualityCheckResult })[];
     errors: { index: number; error: string }[];
   }>> {
-    const response = await api.post('/api/cards/generate/batch', { questions, settings });
+    const response = await api.post('/api/v1/cards-langgraph/generate-batch', { questions, settings });
     return response.data;
   },
 
   // 质量检查
   async checkQuality(card: AnkiCard): Promise<ApiResponse<QualityCheckResult>> {
-    const response = await api.post('/api/cards/quality-check', { card });
+    const response = await api.post('/api/v1/cards/quality-check', { card });
     return response.data;
   },
 
@@ -120,13 +120,13 @@ export const apiService = {
     qualityCheck: QualityCheckResult;
     improvementSummary: string;
   }>> {
-    const response = await api.post('/api/cards/improve', { card, issues, suggestions });
+    const response = await api.post('/api/v1/cards/improve', { card, issues, suggestions });
     return response.data;
   },
 
   // 导出Anki包
   async exportAnkiPackage(cards: AnkiCard[], deckName: string): Promise<Blob> {
-    const response = await api.post('/api/cards/export', { cards, deckName }, {
+    const response = await api.post('/api/v1/cards/export', { cards, deckName }, {
       responseType: 'blob',
     });
     return response.data;
