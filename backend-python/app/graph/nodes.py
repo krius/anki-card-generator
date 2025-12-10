@@ -308,8 +308,8 @@ class BatchGenerationNodes:
 
                 if result.get('final_card') and result.get('final_quality_check'):
                     cards.append({
-                        "card": result['final_card'].dict(),
-                        "quality_check": result['final_quality_check'].dict()
+                        "card": result['final_card'].model_dump(),
+                        "quality_check": result['final_quality_check'].model_dump()
                     })
                     total_tokens += result.get('tokens_used', 0)
 

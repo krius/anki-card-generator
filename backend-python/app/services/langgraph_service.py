@@ -30,6 +30,13 @@ class LangGraphService:
     async def generate_card(self, request: CardGenerationRequest) -> Dict[str, Any]:
         """生成单个卡片"""
         try:
+            # 验证问题不为空
+            if not request.question or request.question.strip() == "":
+                return {
+                    "success": False,
+                    "error": "问题不能为空"
+                }
+
             # 初始化状态
             initial_state = {
                 "question": request.question,
@@ -66,6 +73,13 @@ class LangGraphService:
     async def generate_cards_batch(self, request: BatchGenerationRequest) -> Dict[str, Any]:
         """批量生成卡片"""
         try:
+            # 验证问题列表不为空
+            if not request.questions or len(request.questions) == 0:
+                return {
+                    "success": False,
+                    "error": "问题列表不能为空"
+                }
+
             # 获取设置
             settings = request.settings or BatchSettings()
 
