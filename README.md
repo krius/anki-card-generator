@@ -23,33 +23,50 @@
 - Python 3.11+
 - 智谱 AI API Key
 
-### 安装步骤
+### 一键启动（推荐）
 
-1. **克隆项目**
 ```bash
+# 1. 克隆项目
 git clone https://github.com/krius/anki-card-generator.git
 cd anki-card-generator
+
+# 2. 配置环境变量
+cp backend-python/.env.example backend-python/.env
+# 编辑 backend-python/.env 文件，填入你的 ZHIPU_API_KEY
+
+# 3. 一键启动
+# Linux/macOS
+./start.sh
+
+# Windows
+start.bat
+
+# 4. 停止服务
+# Linux/macOS
+./stop.sh
+
+# Windows - 直接关闭命令行窗口
 ```
 
-2. **配置后端**
+### 手动启动
+
+如果你想手动控制服务：
+
+1. **配置后端**
 ```bash
 cd backend-python
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-
-# 配置环境变量
-cp .env.example .env
-# 编辑 .env 文件，填入你的 ZHIPU_API_KEY
 ```
 
-3. **安装前端**
+2. **安装前端**
 ```bash
 cd ../frontend
 npm install
 ```
 
-4. **启动服务**
+3. **启动服务**
 ```bash
 # 终端 1 - 启动后端
 cd backend-python
