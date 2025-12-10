@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .api.v1.api import api_router
 from .core.config import settings
+from .core.database import init_db
 
 
 @asynccontextmanager
@@ -13,6 +14,10 @@ async def lifespan(app: FastAPI):
     print(f"{settings.app_name} v{settings.app_version} is starting...")
     print(f"Server running at http://{settings.host}:{settings.port}")
     print(f"API docs available at http://{settings.host}:{settings.port}/docs")
+
+    # 初始化数据库
+    await init_db()
+    print("Database initialized successfully")
 
     yield
 

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict, field_serializer
 from typing import List, Optional, Literal, Union, Dict, Any, Generic, TypeVar
 from uuid import UUID
 from datetime import datetime
@@ -17,14 +17,16 @@ class AnkiCardBase(BaseModel):
 
 class AnkiCard(AnkiCardBase):
     """Anki卡片完整模型"""
+    model_config = ConfigDict(from_attributes=True)
+
     id: Optional[Union[UUID, str]] = None  # 允许字符串类型的ID用于测试
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
-    class Config:
-        json_encoders = {
-            UUID: lambda v: str(v) if v else None
-        }
+    @field_serializer('id')
+    def serialize_id(self, value: Optional[Union[UUID, str]]) -> Optional[str]:
+        """序列化UUID为字符串"""
+        return str(value) if isinstance(value, UUID) else value
 
 
 class BatchSettings(BaseModel):
@@ -88,3 +90,58 @@ class ImproveCardRequest(BaseModel):
     card: AnkiCard
     issues: List[str]
     suggestions: List[str]
+
+
+# ===== 数据库CRUD相关的Schema =====
+
+class CardBase(BaseModel):
+    """卡片基础模型"""
+    question: str = Field(..., description="问题")
+    answer: str = Field(..., description="答案")
+    deck_name: str = Field(default="Default", description="牌组名")
+    tags: List[str] = Field(default=[], description="标签列表")
+    quality_score: Optional[float] = Field(None, description="质量分数")
+
+
+class CardCreate(CardBase):
+    """创建卡片的模型"""
+    pass
+
+
+class CardUpdate(BaseModel):
+    """更新卡片的模型"""
+    question: Optional[str] = None
+    answer: Optional[str] = None
+    deck_name: Optional[str] = None
+    tags: Optional[List[str]] = None
+    quality_score: Optional[float] = None
+
+
+class CardInDB(CardBase):
+    """数据库中的卡片模型"""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    created_at: datetime
+
+
+class Card(CardInDB):
+    """响应的卡片模型"""
+    pass
+
+
+class BatchCardSave(BaseModel):
+    """批量保存卡片请求"""
+    cards: List[CardCreate] = Field(..., description="卡片列表")
+
+
+class CardList(BaseModel):
+    """卡片列表响应"""
+    cards: List[Card]
+    total: int
+
+
+class CardDelete(BaseModel):
+    """删除卡片响应"""
+    success: bool
+    message: str

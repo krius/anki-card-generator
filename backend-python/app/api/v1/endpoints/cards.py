@@ -1,6 +1,7 @@
-from typing import List
+from typing import List, Optional
 from uuid import uuid4
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Query
+from sqlalchemy.ext.asyncio import AsyncSession
 import asyncio
 
 from ....schemas.card import (
@@ -10,9 +11,12 @@ from ....schemas.card import (
     QualityCheckResult,
     ApiResponse,
     LLMResponse,
-    ImproveCardRequest
+    ImproveCardRequest,
+    Card, CardCreate, CardUpdate, CardList, CardDelete, BatchCardSave
 )
 from ....services.ai_service import AIService
+from ....services.card_service import CardService
+from ....core.database import get_db
 
 
 router = APIRouter()
@@ -272,3 +276,94 @@ async def improve_card(request: ImproveCardRequest):
             status_code=500,
             detail=f"Error improving card: {str(error)}"
         )
+
+
+# ===== 数据库CRUD相关的路由 =====
+
+
+@router.post("/save", response_model=List[Card])
+async def save_cards(
+    request: BatchCardSave,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    保存单个或多个卡片
+
+    - **cards**: 要保存的卡片列表
+    """
+    try:
+        cards = await CardService.create_cards_batch(db, request.cards)
+        return cards
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"保存卡片失败: {str(e)}")
+
+
+@router.get("/", response_model=CardList)
+async def get_cards(
+    skip: int = Query(0, ge=0, description="跳过的记录数"),
+    limit: int = Query(100, ge=1, le=1000, description="返回的记录数"),
+    search: Optional[str] = Query(None, description="搜索关键词"),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    获取所有卡片
+
+    支持分页和搜索功能
+    """
+    try:
+        cards = await CardService.get_all_cards(db, skip=skip, limit=limit, search=search)
+        total = await CardService.count_cards(db, search=search)
+        return CardList(cards=cards, total=total)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取卡片失败: {str(e)}")
+
+
+@router.get("/{card_id}", response_model=Card)
+async def get_card(
+    card_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """根据ID获取单个卡片"""
+    card = await CardService.get_card_by_id(db, card_id)
+    if not card:
+        raise HTTPException(status_code=404, detail="卡片不存在")
+    return card
+
+
+@router.put("/{card_id}", response_model=Card)
+async def update_card(
+    card_id: int,
+    card_data: CardUpdate,
+    db: AsyncSession = Depends(get_db)
+):
+    """更新卡片"""
+    card = await CardService.update_card(db, card_id, card_data)
+    if not card:
+        raise HTTPException(status_code=404, detail="卡片不存在")
+    return card
+
+
+@router.delete("/{card_id}", response_model=CardDelete)
+async def delete_card(
+    card_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """删除卡片"""
+    success = await CardService.delete_card(db, card_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="卡片不存在")
+
+    return CardDelete(success=True, message="卡片删除成功")
+
+
+@router.post("/single", response_model=Card)
+async def save_single_card(
+    card_data: CardCreate,
+    db: AsyncSession = Depends(get_db)
+):
+    """保存单个卡片的便捷接口"""
+    try:
+        card = await CardService.create_card(db, card_data)
+        return card
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"保存卡片失败: {str(e)}")

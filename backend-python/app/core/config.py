@@ -1,9 +1,15 @@
 from pydantic_settings import BaseSettings
+from pydantic import ConfigDict
 from typing import List, Optional
 
 
 class Settings(BaseSettings):
     """应用配置"""
+    model_config = ConfigDict(
+        env_file=".env",
+        case_sensitive=False
+    )
+
     app_name: str = "Anki Card Generator API"
     app_version: str = "1.0.0"
     debug: bool = False
@@ -24,10 +30,6 @@ class Settings(BaseSettings):
     @property
     def cors_origins_list(self) -> List[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
-
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
 
 
 # 全局配置实例
